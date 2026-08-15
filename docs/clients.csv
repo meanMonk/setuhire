@@ -1,0 +1,7 @@
+id,name,industry,contact_person,contact_email,contact_phone,status,engagement_start_date
+c1,Finlytics Corp,BFSI Tech,Rahul Mehta,rahul.mehta@finlytics.com,+91-9820011223,active,2025-11-01
+c2,Northwind Retail Systems,Retail/E-commerce,Ananya Rao,ananya.rao@northwindretail.com,+91-9845566778,active,2026-01-15
+c3,MedCore Health Solutions,Healthcare IT,Vikram Iyer,vikram.iyer@medcore.com,+91-9900112233,active,2026-02-10
+c4,BrightPath Logistics,Supply Chain/Logistics,Sneha Kapoor,sneha.kapoor@brightpathlog.com,+91-9765544332,on_hold,2025-09-20
+c5,ClearWave Telecom,Telecom,Arjun Nair,arjun.nair@clearwavetel.com,+91-9812233445,active,2026-03-05
+c6,Vantage Insurance Group,Insurance,Meera Pillai,meera.pillai@vantageins.com,+91-9887766554,lost,2025-06-12

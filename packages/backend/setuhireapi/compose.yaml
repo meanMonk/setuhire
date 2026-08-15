@@ -1,0 +1,19 @@
+# Per-service compose. Joins the shared external vaayu_db network.
+# Run:  docker compose -f compose.yaml up -d --build
+# DB URIs come from the package .env (PG_URI points at the `postgres`
+# container on vaayu_db — the VPS already runs it, no infra needed here).
+name: vaayu-setuhireapi
+
+services:
+  setuhireapi:
+    build: .
+    image: setuhireapi:latest
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "3420:3400"
+    networks: [vaayu_db]
+
+networks:
+  vaayu_db:
+    external: true

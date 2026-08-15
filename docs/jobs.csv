@@ -1,0 +1,7 @@
+id,client_id,title,tech_stack,experience_required,target_selling_cost,currency,employment_type,status,description
+j1,c1,Senior Salesforce Developer,"Salesforce,Apex,Lightning,LWC",6+ years,175000,INR,contract,open,Client needs a senior Salesforce dev for a Lightning migration project. Budget 1.75L+GST per month.
+j2,c2,Full Stack Engineer (MERN),"React,Node.js,MongoDB,Express",4-6 years,140000,INR,contract,open,Retail platform team scaling checkout services, needs full stack MERN engineer.
+j3,c3,ServiceNow Developer,"ServiceNow,ITSM,JavaScript",5+ years,160000,INR,contract,open,Healthcare client implementing ServiceNow ITSM module, needs certified developer.
+j4,c1,AI/ML Engineer,"Python,LLM,LangChain,PyTorch",5+ years,190000,INR,fte,open,Finlytics building internal AI copilot for analysts, direct FTE hire preferred.
+j5,c5,Backend Engineer (Java),"Java,Spring Boot,Kafka",6+ years,155000,INR,contract,filled,Telecom billing system backend, position filled last month.
+j6,c2,DevOps Engineer,"AWS,Kubernetes,Terraform,CI/CD",4+ years,145000,INR,contract,open,Retail client needs infra scaling support ahead of festive season.

@@ -1,0 +1,6 @@
+id,match_id,round,interviewer,scheduled_at,status,feedback
+int1,m1,L1,Priya Sharma,2026-08-18 11:00:00,scheduled,
+int2,m3,L1,Priya Sharma,2026-08-17 15:00:00,cleared,Strong React fundamentals, good system design answers.
+int3,m3,Client,Ananya Rao,2026-08-20 10:30:00,scheduled,
+int4,m5,L1,Priya Sharma,2026-08-16 14:00:00,cleared,Solid ServiceNow config knowledge, moving to client round.
+int5,m8,L1,Priya Sharma,2026-08-19 16:00:00,scheduled,

@@ -1,0 +1,9 @@
+id,job_id,candidate_id,source_vendor_id,match_score,match_rationale,stage
+m1,j1,cand1,v1,94,Strong Apex/Lightning/LWC overlap, 6.5 yrs exceeds 6+ requirement, rate expectation fits within TSC.
+m2,j1,cand7,v1,88,Good Salesforce + MuleSoft integration skills, 8 yrs experience, rate close to TSC ceiling.
+m3,j2,cand2,,92,Direct DB candidate, strong React/Node/Mongo match, 5 yrs fits 4-6 range, rate well within TSC.
+m4,j2,cand8,,71,Skills match but 3.5 yrs below the 4-6 yr requirement, junior-side fit.
+m5,j3,cand3,v4,91,ServiceNow ITSM + Glide match strong, 5.5 yrs fits 5+ requirement, rate within TSC.
+m6,j4,cand4,,90,Strong LangChain/PyTorch/LLM/RAG overlap, 5 yrs meets requirement, rate slightly above TSC - negotiable.
+m7,j4,cand10,,79,Good ML/TensorFlow/LLM skills but 4 yrs slightly below 5+ requirement, rate above TSC.
+m8,j6,cand6,v5,86,Strong AWS/K8s/Terraform match, 4.5 yrs close to 4+ requirement, rate within TSC.

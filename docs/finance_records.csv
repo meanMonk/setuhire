@@ -1,0 +1,2 @@
+id,match_id,client_billing_amount,vendor_payout_amount,commission,billing_status,period
+fin1,m5,160000,140000,20000,invoiced,2026-08

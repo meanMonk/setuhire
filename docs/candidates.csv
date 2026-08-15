@@ -1,0 +1,11 @@
+id,name,email,phone,skills,experience_years,current_status,source_type,source_vendor_id,rate_expectation,resume_url
+cand1,Aditya Kulkarni,aditya.k.dev@gmail.com,+91-9911223344,"Salesforce,Apex,Lightning,LWC,Visualforce",6.5,available,vendor,v1,150000,/resumes/aditya_kulkarni.pdf
+cand2,Nisha Reddy,nisha.reddy.eng@gmail.com,+91-9922334455,"React,Node.js,MongoDB,Express,TypeScript",5,available,direct,,135000,/resumes/nisha_reddy.pdf
+cand3,Farhan Sheikh,farhan.sheikh.sn@gmail.com,+91-9933445566,"ServiceNow,ITSM,JavaScript,Glide",5.5,available,vendor,v4,142000,/resumes/farhan_sheikh.pdf
+cand4,Kavya Menon,kavya.menon.ai@gmail.com,+91-9944556677,"Python,LangChain,PyTorch,LLM,RAG",5,available,direct,,185000,/resumes/kavya_menon.pdf
+cand5,Rohit Bansal,rohit.bansal.java@gmail.com,+91-9955667788,"Java,Spring Boot,Kafka,Microservices",7,engaged,vendor,v2,158000,/resumes/rohit_bansal.pdf
+cand6,Sanya Kapoor,sanya.kapoor.dev@gmail.com,+91-9966778899,"AWS,Kubernetes,Terraform,Docker,CI/CD",4.5,available,vendor,v5,128000,/resumes/sanya_kapoor.pdf
+cand7,Vivek Choudhary,vivek.choudhary.sf@gmail.com,+91-9977889900,"Salesforce,Apex,Integration,MuleSoft",8,available,vendor,v1,165000,/resumes/vivek_choudhary.pdf
+cand8,Ritika Joshi,ritika.joshi.full@gmail.com,+91-9988990011,"React,Node.js,PostgreSQL,GraphQL",3.5,available,direct,,115000,/resumes/ritika_joshi.pdf
+cand9,Amit Trivedi,amit.trivedi.sn@gmail.com,+91-9999001122,"ServiceNow,ITSM,CMDB,JavaScript",6,not_looking,vendor,v4,150000,/resumes/amit_trivedi.pdf
+cand10,Pooja Nambiar,pooja.nambiar.ml@gmail.com,+91-9900112233,"Python,TensorFlow,LLM,MLOps",4,available,direct,,170000,/resumes/pooja_nambiar.pdf

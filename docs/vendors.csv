@@ -1,0 +1,6 @@
+id,name,specialization,contact_person,contact_email,contact_phone,status,rate_notes
+v1,TalentBridge Consulting,"Salesforce,ServiceNow",Kunal Deshpande,kunal@talentbridge.in,+91-9822334455,preferred,Typically 10-15% below client TSC on Salesforce profiles
+v2,CodeForge Staffing,"Full Stack,MERN,Java",Isha Verma,isha@codeforge.in,+91-9833445566,active,Competitive on mid-level full stack, slower turnaround on senior
+v3,NimbusTech Partners,"AI/ML,Data Engineering",Rohan Bhatt,rohan@nimbustech.in,+91-9844556677,active,Premium pricing but strong AI/ML bench
+v4,SwiftHire Solutions,"ServiceNow,ITSM",Divya Shenoy,divya@swifthire.in,+91-9855667788,active,Good ServiceNow bench in Pune/Bangalore
+v5,ProStaff India,"Full Stack,DevOps",Manoj Tiwari,manoj@prostaffindia.in,+91-9866778899,blacklisted,Repeated no-shows on submitted candidates, avoid

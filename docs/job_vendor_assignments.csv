@@ -1,0 +1,5 @@
+id,job_id,vendor_id,sourcing_cost,assigned_at
+jva1,j1,v1,150000,2026-07-20
+jva2,j3,v4,140000,2026-07-25
+jva3,j6,v5,125000,2026-07-28
+jva4,j2,v2,120000,2026-08-01

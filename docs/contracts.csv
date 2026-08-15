@@ -1,0 +1,3 @@
+id,match_id,contract_type,rate,start_date,end_date,document_url,status
+ctr1,m5,vendor_client,160000,2026-08-25,2027-02-25,/contracts/ctr1_medcore_farhan.pdf,active
+ctr2,m5,candidate_vendor,140000,2026-08-25,2027-02-25,/contracts/ctr2_farhan_swifthire.pdf,active

@@ -1,0 +1,4 @@
+id,email,password_plaintext_for_seed_only,name,role
+u1,ceo@setuhire.com,Passw0rd!,Sameer Kulkarni,ceo
+u2,priya.recruiter@setuhire.com,Passw0rd!,Priya Sharma,recruiter
+u3,admin@setuhire.com,Passw0rd!,Admin User,admin
