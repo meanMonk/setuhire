@@ -6,32 +6,32 @@
 name: vaayu-db
 
 services:
-  mongo:
-    image: mongo:8
-    container_name: vaayu-mongo
-    restart: unless-stopped
-    command: ["mongod", "--bind_ip_all"]
-    volumes:
-      - mongo_data:/data/db
-    # No host port published — apps reach it as `mongo:27017` on vaayu_db.
-    # Avoids clashing with a local brew mongod on 127.0.0.1.
-    networks:
-      - vaayu_db
+  # mongo:
+  #   image: mongo:8
+  #   container_name: vaayu-mongo
+  #   restart: unless-stopped
+  #   command: ["mongod", "--bind_ip_all"]
+  #   volumes:
+  #     - mongo_data:/data/db
+  #   # No host port published — apps reach it as `mongo:27017` on vaayu_db.
+  #   # Avoids clashing with a local brew mongod on 127.0.0.1.
+  #   networks:
+  #     - vaayu_db
 
-  mongo-express:
-    image: mongo-express:1-0-18
-    container_name: vaayu-mongo-express
-    restart: unless-stopped
-    depends_on: [mongo]
-    environment:
-      ME_CONFIG_MONGODB_SERVER: mongo
-      ME_CONFIG_MONGODB_PORT: "27017"
-      ME_CONFIG_BASICAUTH_USERNAME: ${DB_UI_USER:-admin}
-      ME_CONFIG_BASICAUTH_PASSWORD: ${DB_UI_PASSWORD:?set DB_UI_PASSWORD in .env}
-    ports:
-      - "8081:8081"
-    networks:
-      - vaayu_db
+  # mongo-express:
+  #   image: mongo-express:1.0-18
+  #   container_name: vaayu-mongo-express
+  #   restart: unless-stopped
+  #   depends_on: [mongo]
+  #   environment:
+  #     ME_CONFIG_MONGODB_SERVER: mongo
+  #     ME_CONFIG_MONGODB_PORT: "27017"
+  #     ME_CONFIG_BASICAUTH_USERNAME: ${DB_UI_USER:-admin}
+  #     ME_CONFIG_BASICAUTH_PASSWORD: ${DB_UI_PASSWORD:?set DB_UI_PASSWORD in .env}
+  #   ports:
+  #     - "8081:8081"
+  #   networks:
+  #     - vaayu_db
 
   minio:
     image: minio/minio:latest
@@ -49,9 +49,25 @@ services:
     networks:
       - vaayu_db
 
+  # postgres:
+  #   image: postgres:16-alpine
+  #   container_name: vaayu-postgres
+  #   restart: unless-stopped
+  #   environment:
+  #     POSTGRES_USER: setuhire
+  #     POSTGRES_PASSWORD: setuhire
+  #     POSTGRES_DB: app_setuhireapi
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   ports:
+  #     - "127.0.0.1:5432:5432"
+  #   networks:
+  #     - vaayu_db
+
 volumes:
-  mongo_data:
+  # mongo_data:
   minio_data:
+  postgres_data:
 
 networks:
   vaayu_db:

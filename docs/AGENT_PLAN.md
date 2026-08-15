@@ -119,22 +119,31 @@ pnpm install && pnpm dev    # :3001, /api proxied to :3400
 
 ## 7. How to run multiple agents at the same time
 
-**Option A — separate opencode sessions (recommended, simplest):** one terminal per agent.
+**Option A — one-liner (recommended):** `scripts/run-agents.sh`. Run it wave-wise; it auto-attaches every agent to your `opencode serve` server so you can watch live sessions from one terminal:
+
+```bash
+opencode serve                     # terminal 1 (once) — if not already running
+./scripts/run-agents.sh 0          # wave 0 alone
+./scripts/run-agents.sh 1          # wave 1: 6 backend agents in parallel
+./scripts/run-agents.sh 2          # wave 2: web foundation then 3 page agents
+./scripts/run-agents.sh --status   # live status + server session list
+./scripts/run-agents.sh --watch    # tail all agent logs
+opencode attach http://127.0.0.1:4096 --session <id>   # jump into any live agent
+```
+
+**Option B — separate opencode sessions (per-terminal):** one terminal per agent.
 
 ```bash
 # terminal 1
-opencode docs/agents/02-be-clients-vendors.md
-# terminal 2
-opencode docs/agents/03-be-jobs.md
-# terminal 3 ... up to N (only run wave-1 agents AFTER wave-0 is committed)
+opencode attach http://127.0.0.1:4096 --session <id>   # attach to agent's live session
 ```
 
-**Option B — `opencode run` (headless, scriptable):**
+**Option C — `opencode run` (headless, scriptable):**
 ```bash
-opencode run "Implement docs/agents/03-be-jobs.md fully, then run pnpm typecheck and report"
+opencode run --attach http://127.0.0.1:4096 --title 03-be-jobs "Implement docs/agents/03-be-jobs.md fully, then run pnpm typecheck and report"
 ```
 
-**Option C — opencode subagents (in-session `task` tool):** spawn a `general` agent per brief with the prompt `"Read docs/agents/NN-*.md and implement it fully; run typecheck; report files changed + verify output."` Run several in parallel — they operate on the same tree but disjoint files.
+**Option D — opencode subagents (in-session `task` tool):** spawn a `general` agent per brief with the prompt `"Read docs/agents/NN-*.md and implement it fully; run typecheck; report files changed + verify output."` Run several in parallel — they operate on the same tree but disjoint files.
 
 **Sequencing rules for safety:**
 1. **Wave 0 must finish and commit first.** Everything imports its files.
