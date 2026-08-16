@@ -45,7 +45,7 @@ echo "▶ Syncing source (no node_modules/.env/.git/dist)..."
 rsync -avz \
   --exclude node_modules --exclude .git --exclude '*.log' --exclude '.DS_Store' \
   --exclude '.env' --exclude '.env.*' --exclude 'dist' --exclude 'coverage' \
-  --exclude 'docs' --exclude 'test' \
+  --exclude 'docs/agents' --exclude 'test' \
   ./ "${SSH_HOST}:${REMOTE_DIR}/" 2>/dev/null || true
 
 echo "▶ Creating PostgreSQL database + user on the VPS..."
@@ -62,12 +62,37 @@ echo "▶ Writing prod .env on server (vaayu_db hostnames)..."
 ENC() { node -e 'process.stdout.write(encodeURIComponent(process.argv[1]))' "$1" 2>/dev/null || printf '%s' "$1"; }
 ENC_PASS=$(ENC "$PG_APP_PASSWORD")
 
+# Forward local secrets (set in packages/backend/setuhireapi/.env) to prod.
+LOCAL_ENV="${REPO}/packages/backend/setuhireapi/.env"
+get_local() { grep -E "^$1=" "$LOCAL_ENV" 2>/dev/null | tail -1 | cut -d= -f2- | tr -d '"' | tr -d "'" || true; }
+DEEPSEEK_API_KEY="$(get_local DEEPSEEK_API_KEY)"
+OPENROUTER_API_KEY="$(get_local OPENROUTER_API_KEY)"
+ANTHROPIC_API_KEY="$(get_local ANTHROPIC_API_KEY)"
+LLM_PROVIDER="$(get_local LLM_PROVIDER)"
+DEEPSEEK_MODEL="$(get_local DEEPSEEK_MODEL)"
+
+# Reuse an existing prod JWT secret (so sessions survive redeploys); generate once.
+JWT_SECRET="$(ssh "$SSH_HOST" "grep '^JWT_SECRET=' ${REMOTE_DIR}/packages/backend/setuhireapi/.env 2>/dev/null | cut -d= -f2- | tr -d '\r'" 2>/dev/null || true)"
+[ -n "$JWT_SECRET" ] || JWT_SECRET="$(openssl rand -hex 32)"
+
 API_ENV="PORT=3400
 SERVICE_NAME=setuhireapi
 DB_TYPE=postgres
 DB_NAME=${PG_DB}
 PG_URI=postgres://${PG_APP_USER}:${ENC_PASS}@postgres:5432/${PG_DB}
-OPENAPI_TITLE=setuhireapi API"
+JWT_SECRET=${JWT_SECRET}
+OPENAPI_TITLE=setuhireapi API
+MINIO_ENDPOINT=minio
+MINIO_PORT=9000
+MINIO_USE_SSL=false
+MINIO_ACCESS_KEY=admin
+MINIO_SECRET_KEY=password123
+MINIO_BUCKET=setuhire
+LLM_PROVIDER=${LLM_PROVIDER}
+DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+DEEPSEEK_MODEL=${DEEPSEEK_MODEL}
+OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}"
 ssh "$SSH_HOST" "mkdir -p ${REMOTE_DIR}/packages/backend/setuhireapi"
 printf '%s\n' "$API_ENV" | ssh "$SSH_HOST" "cat > ${REMOTE_DIR}/packages/backend/setuhireapi/.env"
 
@@ -83,6 +108,23 @@ printf '%s\n' "$ROOT_ENV" | ssh "$SSH_HOST" "cat > ${REMOTE_DIR}/.env"
 
 echo "▶ Building & starting containers on VPS..."
 ssh "$SSH_HOST" "cd ${REMOTE_DIR} && docker compose up -d --build"
+
+echo "▶ Pushing schema + seeding database (idempotent)..."
+ssh "$SSH_HOST" "bash -s" <<REMOTE
+set -e
+cd ${REMOTE_DIR}
+CID=\$(docker compose ps -q setuhireapi)
+docker exec \$CID mkdir -p /docs
+docker cp ${REMOTE_DIR}/docs/. \$CID:/docs/
+docker exec \$CID pnpm exec drizzle-kit push --force
+COUNT=\$(docker exec -e PGPASSWORD='${PG_APP_PASSWORD}' vaayu-postgres psql -U ${PG_APP_USER} -h localhost -d ${PG_DB} -tAc 'SELECT count(*) FROM users' 2>/dev/null || echo 1)
+if [ "\$COUNT" = "0" ]; then
+  docker exec \$CID pnpm db:seed
+  echo "  Seeded ${PG_DB}."
+else
+  echo "  DB already populated (\$COUNT users) — skipping seed."
+fi
+REMOTE
 
 echo "▶ Setting up nginx + SSL..."
 ssh "$SSH_HOST" "cd ${REMOTE_DIR} && bash vps/nginx/setup-nginx.sh" || {
