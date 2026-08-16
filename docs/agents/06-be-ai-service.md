@@ -1,40 +1,109 @@
 # 06 — BE-AI-SERVICE (Wave 1, parallel)
 
-Upgrades `src/services/ai.ts` (stub created by agent 00). Touch ONLY that file.
+**Owner files:** `src/services/ai.ts` only (+ package.json dep if needed)  
+**PO lens:** AI is a *force multiplier*, not a black box. Parsing must be editable. Matching must be fast, explainable, and flag “call now” (≥90). Never block the product if the API key is missing.
 
-## Context
-Agent 00 shipped a deterministic-fallback stub with these exact signatures. Keep the signatures identical (agents 03/04 already import them). Replace the bodies with real AI where possible, **keeping the deterministic fallback when no `ANTHROPIC_API_KEY` is set.**
+---
 
+## Signatures (LOCKED — do not change)
+
+```ts
+parseJobFromUrl(url: string): Promise<JobPreview>
+parseJobFromText(rawText: string): Promise<JobPreview>
+parseResume(buffer: Buffer, filename: string): Promise<CandidateProfile>
+runMatch(job: Job, candidates: Candidate[]): Promise<MatchResult[]>
 ```
-parseJobFromUrl(url: string) -> Promise<JobPreview>
-parseJobFromText(rawText: string) -> Promise<JobPreview>
-parseResume(buffer: Buffer, filename: string) -> Promise<CandidateProfile>
-runMatch(job: Job, candidates: Candidate[]) -> Promise<MatchResult[]>
+
+Foundation stub already exports these. Replace bodies; keep fallbacks.
+
+---
+
+## Output shapes (what UI edits)
+
+### JobPreview
+```ts
+{
+  title: string,
+  skills: { must_have: string[], nice_to_have: string[] },
+  min_experience?: number,
+  max_experience?: number,
+  employment_type?: 'fte' | 'contract' | string,
+  seniority?: string,
+  experience_required?: string,  // e.g. "6+ years" for form field
+  description?: string
+}
 ```
+
+### CandidateProfile
+```ts
+{
+  skills: string[],
+  experience_years?: number,
+  roles?: Array<{ title: string, company: string, duration?: string, tech?: string[] }>,
+  education?: string | string[],
+  certifications?: string[],
+  // optional extract if present in resume:
+  name?, email?, phone?, rate_hint?
+}
+```
+
+### MatchResult
+```ts
+{
+  candidate: Candidate,       // pass-through input row
+  score: number,              // 0–100
+  rationale: string,          // 2–3 lines plain English
+  source: string,             // 'direct' or vendor label if available on candidate
+  key_skills_overlap: string[],
+  rate_fit: 'ok' | 'above_tsc'
+}
+```
+
+---
 
 ## Implementation
-- **LLM client:** Anthropic SDK (`@anthropic-ai/sdk`, add dep). API key from `ANTHROPIC_API_KEY`. Model: `claude-sonnet-4-20250514` (or current default). Use `{ messages, max_tokens }` with a JSON-output prompt; parse the JSON safely (strip fences). If key missing or call fails → fall back to the deterministic stub and proceed.
-- **JobPreview shape** (PRD §5): `{ title, skills: { must_have: string[], nice_to_have: string[] }, min_experience?, max_experience?, employment_type?, seniority? }`.
-- **CandidateProfile shape** (PRD §5): `{ skills: string[], experience_years?, roles: [{title, company, duration?, tech: string[]}], education?, certifications? }`.
-- **`runMatch` (deterministic — no LLM per candidate, per PRD §5 note):**
-  1. Must-have coverage (50%): `matched_must / must_have.length` with synonym matching (case-insensitive; substring/normalize "ReactJS"="React").
-  2. Nice-to-have coverage (15%): same.
-  3. Experience fit (20%): score 1 if within [min,max]; -0.5 if below min; -0.2 if above max; 0.5 if no exp data.
-  4. Rate fit (15%): candidate.rate_expectation vs job.target_selling_cost — 1 if rate <= TSC; scale down if exceeds.
-  5. `score = round((50*1 + 15*2 + 20*3 + 15*4))`, clamp 0–100.
-- **`match_rationale`:** single LLM call for top-N (max 20) candidates (PRD §5 Stage 3): input = candidate profile + job preview → 2–3 line plain-English rationale. Fallback: build a short deterministic sentence ("Strong <skill overlap>; <exp> yrs vs <min>+ required; rate <ok/above TSC>").
-- `MatchResult`: `{ candidate, score, rationale, source, key_skills_overlap: string[], rate_fit: 'ok'|'above_tsc' }`.
 
-## Rules
-- No route code, no schema changes. Only `services/ai.ts` + package.json dep.
-- Guard against empty input (no skills / no candidates → return gracefully, never throw).
-- Parse LLM JSON robustly: try/catch + strip code fences; on any failure return the deterministic result.
+### LLM (optional path)
+- `@anthropic-ai/sdk`, key `ANTHROPIC_API_KEY`, model `claude-sonnet-4-20250514` (or current default)  
+- JSON-only prompts; strip fences; try/catch  
+- Missing key OR failure → **deterministic fallback**, never throw to caller  
+
+### `runMatch` scoring (deterministic — always)
+| Factor | Weight | Logic |
+|--------|--------|-------|
+| Must-have coverage | 50% | matched_must / must_have.length; synonym/normalize (reactjs≈react) |
+| Nice-to-have | 15% | same |
+| Experience fit | 20% | 1 in [min,max]; 0.5 if no data; −0.5 below min; −0.2 above max |
+| Rate fit | 15% | 1 if rate ≤ TSC; scale down if above; 0.5 if missing |
+
+`score = round(100 * weighted)` clamp 0–100  
+
+Bands (document for UI):  
+- 90–100 priority call  
+- 75–89 strong  
+- <75 visible, not flagged  
+
+### Rationale
+- Prefer **one** LLM batch for top-N (max 20) after scores sorted  
+- Fallback sentence: `"Strong <overlap>; <exp> yrs vs <min>+ required; rate <ok|above TSC>"`  
+
+### Job parse fallback (no key)
+- Heuristic: first line title-ish; tokenize skills from known tech dictionary; exp regex `(\d+)\+?\s*years?`  
+
+### Resume parse fallback
+- PDF text extract if simple; else empty skills + filename-based stub — still return valid object  
+
+### Guards
+- Empty candidates → `[]`  
+- Empty must_have → score from nice/exp/rate only (renormalize or treat must as 1)  
+- Never throw on bad buffer — return empty profile  
+
+---
 
 ## Verify
 ```bash
 cd packages/backend/setuhireapi && pnpm typecheck
-# without ANTHROPIC_API_KEY (fallback path):
-pnpm dev  # then: login + curl -X POST localhost:3400/api/v1/jobs/j1/match
-# with a key set, same call → real rationale text in the response.
+# without key: POST /jobs/:id/match → scores + deterministic rationales
+# with key: rationales richer English
 ```
-Report: signatures unchanged, fallback + LLM evidence.
+Report: signatures unchanged; fallback + optional LLM evidence.

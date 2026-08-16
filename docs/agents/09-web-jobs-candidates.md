@@ -1,46 +1,199 @@
 # 09 — WEB-JOBS-CANDIDATES (Wave 2, parallel)
 
-Fill in stub pages + API helpers. Touch ONLY:
-- `src/pages/Jobs/ListPage.tsx`, `Jobs/DetailPage.tsx`, `Jobs/AddJobPage.tsx`
-- `src/pages/Candidates/ListPage.tsx`, `Candidates/DetailPage.tsx`, `Candidates/AddCandidatePage.tsx`
+**Owner files:**  
+- `src/pages/Jobs/ListPage.tsx`, `DetailPage.tsx`, `AddJobPage.tsx`  
+- `src/pages/Candidates/ListPage.tsx`, `DetailPage.tsx`, `AddCandidatePage.tsx`  
 - `src/api/jobs.ts`, `src/api/candidates.ts`
 
-Use `api/client.ts` and `components/ui.tsx`. No new deps.
+**PO lens:** Jobs = demand board. Candidates = supply shelf. AI is *assist then human confirm*. ≥90% matches must scream “call now.”
 
-## Jobs list (PRD §3.7)
-- GET `/api/v1/jobs` → table: Title, Client, Tech Stack tags, Experience, TSC, Status, Top Match Score, # Candidates in Pipeline. Filters: client, tech stack, status, employment type. "+ Add Job" → `/jobs/new`.
+INR formatting. Loading/error everywhere. No new deps.
 
-## Add Job flow (PRD §3.7a)
-- Two-mode toggle:
-  1. URL fetch: input URL → POST `/api/v1/jobs/fetch-from-url` → editable preview (title, skills must/nice, experience, employment type).
-  2. Manual/paste: textarea raw JD → POST `/api/v1/jobs/parse-text` → same preview.
-- Both → editable form → POST `/api/v1/jobs` to save (`raw_jd_text` included).
+---
 
-## Job detail (PRD §3.8)
-- Header: title, client, tech stack, experience, TSC, employment type, status.
-- **"Run AI Match"** button → POST `/api/v1/jobs/:id/match` → loading state → ranked list (candidate, match score, source Direct/Vendor, skill overlap tags, rate-vs-TSC indicator). **≥90% candidates visually flagged** (badge). Buttons: "Move to Pipeline" (POST `/api/v1/matches`), "Contact Vendor" (link), "Reject" (PATCH match stage=rejected).
-- Vendor assignment section (GET detail `vendorAssignments[]`, POST `/jobs/:id/assign-vendor`).
-- Pipeline snapshot: matches by stage for this job.
+# JOBS
 
-## Candidates list (PRD §3.9)
-- GET `/api/v1/candidates` → table: Name, Skills tags, Experience, Status, Source (Direct/Vendor name), Rate Expectation. Filters: skill, availability, source. "+ Add Candidate" → `/candidates/new`.
+## 1. List — `/jobs` (PRD §3.7)
 
-## Add Candidate (PRD §3.9)
-- Two modes:
-  1. **Resume upload (PDF/DOCX, one or multiple)** → POST `/api/v1/candidates/upload-resume` (multipart) → parsed profile preview for review → POST `/api/v1/candidates` to save with `resume_url` = returned MinIO key.
-  2. Manual form.
-- Show preview (skills/roles/education/certs) with edit before save.
+### Filters bar
+| Control | API param |
+|---------|-----------|
+| Client select | client_id |
+| Tech stack text/tag | tech_stack |
+| Status multi/single | status |
+| Employment type | employment_type |
+| Search title | q |
 
-## Candidate detail (PRD §3.10)
-- Header: name, contact, status, source. Structured profile from `parsedProfile` (skills, experience timeline, education, certifications). Original resume viewable/downloadable (build URL from `resume_url` → presigned via `GET /api/v1/candidates/:id` won't give a presigned URL by default — if you need view/download, call MinIO presign through backend: ask in your open-questions, else render a "Resume on file" link). Match history (scores + stages). Notes field (PATCH `/api/v1/matches/:id` or candidate note — keep to existing API).
+### Columns
+| Col | Notes |
+|-----|-------|
+| Title | link `/jobs/:id` |
+| Client | name |
+| Tech stack | max 4 tags +N |
+| Experience | experienceRequired |
+| TSC | ₹ |
+| Type | FTE/Contract badge |
+| Status | pill |
+| Top match | % or —; ≥90 highlight |
+| Pipeline | count badge |
+| Age | daysOpen or createdAt |
 
-## Rules
-- Loading + error states everywhere. INR formatting. Keep styling to existing classes.
+[+ Add Job] → `/jobs/new` (honor `?client_id=` preselect)
 
-## Verify
-```bash
-cd packages/web/setuhireweb && pnpm typecheck && pnpm dev
-# Jobs list → seeded jobs; AddJob paste-mode → preview; Detail → Run AI Match → ranked list with ≥90 flags
-# Candidates → upload a test PDF → preview → save → appears in list with resume key
+---
+
+## 2. Add Job — `/jobs/new` (PRD §3.7a)
+
+### Stepper / toggle (two modes, same final form)
+
+**Mode A — From URL**  
+1. URL input + “Fetch & parse” → POST `/jobs/fetch-from-url`  
+2. Loading → editable preview form  
+
+**Mode B — Paste / manual**  
+1. Large textarea raw JD + “Parse with AI” → POST `/jobs/parse-text`  
+2. OR skip parse and fill manually  
+
+### Editable form fields (always shown before save)
+| Field | Control | Required | Prefill from preview |
+|-------|---------|----------|----------------------|
+| client_id | select clients | yes | query param |
+| title | text | yes | ✓ |
+| tech_stack | tag input | no | must+nice merged or must only |
+| must_have_skills | tag input | no | skills.must_have → stored in parsed_requirements |
+| nice_to_have_skills | tag input | no | skills.nice_to_have |
+| experience_required | text | no | derived |
+| min/max experience | number | no | hidden advanced OK |
+| target_selling_cost | number | strongly encouraged | — |
+| currency | select default INR | no | |
+| employment_type | fte/contract | yes-ish | ✓ |
+| seniority | text | no | ✓ |
+| status | default open | no | |
+| description | textarea | no | ✓ |
+| raw_jd_text | hidden/textarea | store paste | ✓ |
+| source_url | text | if URL mode | ✓ |
+
+Actions: [Cancel] [Save job] → POST `/jobs` including `parsed_requirements` object → navigate `/jobs/:id`
+
+---
+
+## 3. Detail — `/jobs/:id` (PRD §3.8)
+
+### Header
 ```
-Report: files changed + evidence.
+Title                          [Status ▾ quick patch] [Type] [₹ TSC]
+Client → link · Exp · Stack tags · Days open
+[Run AI Match]  [Assign vendor]  [Edit]
+```
+
+### Block 1 — Pipeline snapshot
+Horizontal counters: Applied | Screened | Interview | Offer | Placed | Rejected  
+Click counter → scroll to pipeline table filtered (client filter OK)
+
+### Block 2 — AI Match results
+- Button → POST `/jobs/:id/match` with full-page or panel loading (“Scoring N candidates…”)  
+- Result table sorted by score:
+
+| Priority | Candidate | Score | Source | Overlap tags | Rate vs TSC | Exp | Actions |
+|----------|-----------|-------|--------|--------------|-------------|-----|---------|
+| 🔥 if ≥90 | link | bar+% | Direct/Vendor | chips | ok / above (warn) | yrs | see below |
+
+**Row actions**
+- **Move to pipeline** → POST `/matches` {job_id, candidate_id} — disable if existingStage set; show stage instead  
+- **Contact vendor** → if vendor source, `mailto:` contact or link `/vendors/:id`  
+- **Reject** → if match exists PATCH stage=rejected; else optional create+reject  
+
+Score bands visual: ≥90 gold/red border, 75–89 normal, <75 muted
+
+Rationale: expandable 2–3 lines under row
+
+### Block 3 — Vendor assignment
+Table: Vendor | Sourcing cost ₹ | Margin (TSC−cost) | Assigned at | Status  
+Form: vendor select + sourcing_cost + Assign → POST `/jobs/:id/assign-vendor`
+
+### Block 4 — Pipeline people (GET matches?job_id=)
+| Candidate | Stage (select to PATCH) | Score | Notes | Updated |
+Stage select onChange → PATCH `/matches/:id` { stage } with confirm on rejected/placed
+
+---
+
+# CANDIDATES
+
+## 4. List — `/candidates` (PRD §3.9)
+
+### Filters
+skill · status (availability) · source (direct/vendor) · vendor_id · q  
+
+### Columns
+| Name | Skills | Exp | Status | Source (vendor name) | Rate ₹ | Resume • | Added |
+
+[+ Add Candidate] → `/candidates/new`
+
+---
+
+## 5. Add Candidate — `/candidates/new`
+
+### Mode toggle
+**A. Resume upload**  
+- Dropzone PDF/DOCX (multi: process sequentially)  
+- POST multipart `/candidates/upload-resume`  
+- Show preview card per file:
+
+| Editable | From parse |
+|----------|------------|
+| name, email, phone | suggested |
+| skills tags | parsedProfile.skills |
+| experience_years | parsed |
+| roles timeline readonly/edit | roles[] |
+| education, certifications | |
+| rate_expectation | manual |
+| source_type + vendor | manual |
+| current_status | default available |
+| resume_url | resumeKey hidden |
+
+[Save candidate] → POST `/candidates` with resume_url + parsed_profile  
+
+**B. Manual** — same fields, no resumeKey  
+
+Validation: name required; if source=vendor, vendor required.
+
+---
+
+## 6. Detail — `/candidates/:id` (PRD §3.10)
+
+### Header
+Name · StatusPill · Source badge · Rate ₹  
+email · phone · [Edit status]
+
+### Structured profile
+- Skills chips  
+- Experience years  
+- Roles timeline: title @ company · duration · tech chips  
+- Education · Certifications  
+
+### Resume
+- If resumeUrl: “View resume” — if backend has no presign yet, show “On file: {key}” + note; if detail returns URL use it  
+- Never point at local disk paths  
+
+### Match history
+| Job | Client | Score | Stage | Rationale | When |
+Click job → `/jobs/:id`
+
+### Recruiter notes
+- Prefer PATCH last match notes OR local textarea that PATCHes candidate if API supports notes field  
+- If only match notes exist: show per-match notes in history  
+
+---
+
+## API helpers
+`jobs.ts`: list, get, create, update, parseText, fetchUrl, match, assignVendor  
+`candidates.ts`: list, get, create, update, uploadResume  
+Also thin `createMatch`, `updateMatch` (or import from pipeline api if exists — don’t fight ownership: call `post('/matches')` via client if needed)
+
+### Verify
+```bash
+pnpm typecheck && pnpm dev
+# Jobs list → AddJob paste parse → save → Detail Run AI Match → ≥90 flags + pipeline move
+# Candidates upload PDF → preview edit → save → detail profile + history
+```
+Report: files + evidence.
