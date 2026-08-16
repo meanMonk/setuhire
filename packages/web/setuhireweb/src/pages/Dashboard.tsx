@@ -4,13 +4,29 @@ import { get } from "../api/client";
 import type { ActivityLogItem, AttentionFeedItem, DashboardSummary } from "../api/types";
 import { Badge, Card, EmptyState, ErrorBox, formatInr, Loading } from "../components/ui";
 
+function isoDate(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+    d.getDate(),
+  ).padStart(2, "0")}`;
+}
+
+const monday = new Date();
+monday.setHours(0, 0, 0, 0);
+monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
+const sunday = new Date(monday);
+sunday.setDate(sunday.getDate() + 6);
+
 const STATS: { key: keyof DashboardSummary; label: string; to: string; money?: boolean }[] = [
   { key: "activeClients", label: "Active Clients", to: "/clients" },
   { key: "openJobs", label: "Open Jobs", to: "/jobs" },
   { key: "candidatesAvailable", label: "Available Candidates", to: "/candidates" },
   { key: "vendorsEngaged", label: "Active Vendors", to: "/vendors" },
-  { key: "interviewsThisWeek", label: "Interviews This Week", to: "/interviews" },
-  { key: "pendingBillingAmount", label: "Pending Billing", to: "/finance", money: true },
+  {
+    key: "interviewsThisWeek",
+    label: "Interviews This Week",
+    to: `/interviews?from=${isoDate(monday)}&to=${isoDate(sunday)}`,
+  },
+  { key: "pendingBillingAmount", label: "Pending Billing", to: "/finance?billing_status=pending", money: true },
 ];
 
 const TONE: Record<string, string> = {

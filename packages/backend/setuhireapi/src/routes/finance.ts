@@ -17,6 +17,7 @@ import {
   isBillingStatus,
   num,
   numStr,
+  type BillingStatus,
 } from "../services/pipeline.js";
 
 export const financeRoutes = new Hono();
@@ -66,11 +67,18 @@ const buildConditions = (q: Record<string, string>) => {
   if (q.client_id) conditions.push(eq(clients.id, q.client_id));
   if (q.vendor_id) conditions.push(eq(vendors.id, q.vendor_id));
   if (q.month) conditions.push(eq(financeRecords.period, q.month));
+  if (q.billing_status) {
+    conditions.push(eq(financeRecords.billingStatus, q.billing_status as BillingStatus));
+  }
   return conditions;
 };
 
 financeRoutes.get("/records", async (c) => {
-  const conditions = buildConditions(c.req.query());
+  const q = c.req.query();
+  if (q.billing_status && !isBillingStatus(q.billing_status)) {
+    return error(c, 400, `invalid billing_status: ${q.billing_status}`);
+  }
+  const conditions = buildConditions(q);
 
   const rows = await db
     .select(rowShape)
@@ -192,7 +200,11 @@ financeRoutes.get("/summary", async (c) => {
 });
 
 financeRoutes.get("/export", async (c) => {
-  const conditions = buildConditions(c.req.query());
+  const q = c.req.query();
+  if (q.billing_status && !isBillingStatus(q.billing_status)) {
+    return error(c, 400, `invalid billing_status: ${q.billing_status}`);
+  }
+  const conditions = buildConditions(q);
 
   const rows = await db
     .select(rowShape)

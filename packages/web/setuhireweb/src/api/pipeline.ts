@@ -4,6 +4,7 @@ import type { Contract, FinanceRecord, Interview } from "./types";
 export type InterviewFilters = {
   jobId?: string;
   candidateId?: string;
+  clientId?: string;
   status?: string;
   from?: string;
   to?: string;
@@ -44,6 +45,7 @@ export async function listInterviews(params?: InterviewFilters): Promise<Intervi
     `/interviews${qs({
       job_id: params?.jobId,
       candidate_id: params?.candidateId,
+      client_id: params?.clientId,
       status: params?.status,
       from: params?.from,
       to: params?.to,
@@ -100,13 +102,17 @@ export async function createContract(body: ContractInput): Promise<Contract> {
   });
 }
 
-export async function updateContract(id: string, body: Partial<ContractInput>): Promise<Contract> {
+export async function updateContract(
+  id: string,
+  body: Partial<ContractInput> & { status?: string },
+): Promise<Contract> {
   return patch<Contract>(`/contracts/${id}`, {
     contract_type: body.contractType,
     rate: body.rate ?? null,
     start_date: body.startDate ?? null,
     end_date: body.endDate ?? null,
     document_url: body.documentUrl ?? null,
+    status: body.status,
   });
 }
 
@@ -118,12 +124,14 @@ export async function financeRecords(params?: {
   clientId?: string;
   vendorId?: string;
   month?: string;
+  billingStatus?: string;
 }): Promise<FinanceRecord[]> {
   return get<FinanceRecord[]>(
     `/finance/records${qs({
       client_id: params?.clientId,
       vendor_id: params?.vendorId,
       month: params?.month,
+      billing_status: params?.billingStatus,
     })}`,
   );
 }
@@ -160,8 +168,8 @@ export async function financeSummary(month?: string): Promise<{
   return get(`/finance/summary${qs({ month })}`);
 }
 
-export async function financeExport(format?: string): Promise<string> {
-  const res = await fetch(`/api/v1/finance/export${qs({ format })}`, {
+export async function financeExport(format?: string, month?: string): Promise<string> {
+  const res = await fetch(`/api/v1/finance/export${qs({ format, month })}`, {
     credentials: "include",
   });
   if (!res.ok) throw new Error(`Export failed (${res.status})`);

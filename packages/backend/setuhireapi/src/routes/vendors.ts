@@ -1,10 +1,12 @@
-import { and, arrayContains, asc, eq } from "drizzle-orm";
+import { and, arrayContains, asc, eq, ilike } from "drizzle-orm";
 import { Hono } from "hono";
 import { db } from "../db/client.js";
 import {
   candidates,
+  clients,
   jobCandidateMatches,
   jobs,
+  jobVendorAssignments,
   vendors,
 } from "../db/schema.js";
 import { requireAuth } from "../lib/auth.js";
@@ -32,26 +34,59 @@ const serializeCandidate = (cand: typeof candidates.$inferSelect) => ({
   rateExpectation: toNum(cand.rateExpectation),
 });
 
-const computePerformance = (stages: (string | null)[]) => {
-  const submissions = stages.filter((s) => s === "applied").length;
-  const shortlisted = stages.filter((s) => s === "screened").length;
+const SHORTLISTED_STAGES = ["screened", "interview", "offer", "placed"];
+const ACTIVE_SUBMISSION_STAGES = ["applied", "screened", "interview", "offer"];
+
+const computePerformance = (stages: string[]) => {
+  const submissions = stages.length;
+  const shortlisted = stages.filter((s) => SHORTLISTED_STAGES.includes(s)).length;
   const placed = stages.filter((s) => s === "placed").length;
   const ratio = submissions === 0 ? 0 : Number(((placed / submissions) * 100).toFixed(2));
   return { submissions, shortlisted, placed, ratio };
 };
 
-async function vendorStages(vendorId: string): Promise<(string | null)[]> {
-  const rows = await db
-    .select({ stage: jobCandidateMatches.stage })
+async function vendorMatchRows(): Promise<
+  { matchVendor: string | null; candVendor: string | null; stage: string | null }[]
+> {
+  return db
+    .select({
+      matchVendor: jobCandidateMatches.sourceVendorId,
+      candVendor: candidates.sourceVendorId,
+      stage: jobCandidateMatches.stage,
+    })
     .from(jobCandidateMatches)
-    .innerJoin(candidates, eq(candidates.id, jobCandidateMatches.candidateId))
-    .where(eq(candidates.sourceVendorId, vendorId));
-  return rows.map((r) => r.stage);
+    .innerJoin(candidates, eq(candidates.id, jobCandidateMatches.candidateId));
+}
+
+async function vendorStages(vendorId: string): Promise<string[]> {
+  const rows = await vendorMatchRows();
+  return rows
+    .filter((r) => (r.matchVendor ?? r.candVendor) === vendorId)
+    .map((r) => r.stage ?? "");
+}
+
+type VendorAggregate = { activeSubmissions: number; placedCount: number };
+
+async function vendorAggregates(ids: string[]): Promise<Map<string, VendorAggregate>> {
+  const map = new Map<string, VendorAggregate>();
+  for (const id of ids) map.set(id, { activeSubmissions: 0, placedCount: 0 });
+  if (ids.length === 0) return map;
+
+  const rows = await vendorMatchRows();
+  for (const r of rows) {
+    const vid = r.matchVendor ?? r.candVendor;
+    if (!vid || !map.has(vid)) continue;
+    const e = map.get(vid)!;
+    if (r.stage === "placed") e.placedCount += 1;
+    if (r.stage && ACTIVE_SUBMISSION_STAGES.includes(r.stage)) e.activeSubmissions += 1;
+  }
+  return map;
 }
 
 vendorsRoutes.get("/", async (c) => {
   const specialization = c.req.query("specialization");
   const statusParam = c.req.query("status");
+  const q = c.req.query("q");
 
   let statusFilter: VendorStatus | undefined;
   if (statusParam !== undefined) {
@@ -66,11 +101,25 @@ vendorsRoutes.get("/", async (c) => {
       and(
         specialization ? arrayContains(vendors.specialization, [specialization]) : undefined,
         statusFilter ? eq(vendors.status, statusFilter) : undefined,
+        q ? ilike(vendors.name, `%${q}%`) : undefined,
       ),
     )
     .orderBy(asc(vendors.name));
 
-  return json(c, rows);
+  const aggs = await vendorAggregates(rows.map((r) => r.id));
+
+  return json(
+    c,
+    rows.map((r) => {
+      const a = aggs.get(r.id);
+      return {
+        ...r,
+        activeSubmissions: a?.activeSubmissions ?? 0,
+        placedCount: a?.placedCount ?? 0,
+        rateNotesPreview: r.rateNotes ? r.rateNotes.slice(0, 80) : null,
+      };
+    }),
+  );
 });
 
 vendorsRoutes.post("/", async (c) => {
@@ -107,14 +156,11 @@ vendorsRoutes.get("/:id", async (c) => {
   if (!vendor) return error(c, 404, "not found");
 
   const supplied = await db
-    .select({
-      candidate: candidates,
-      match: jobCandidateMatches,
-      job: jobs,
-    })
+    .select({ candidate: candidates, match: jobCandidateMatches, job: jobs, client: clients })
     .from(candidates)
     .innerJoin(jobCandidateMatches, eq(jobCandidateMatches.candidateId, candidates.id))
     .innerJoin(jobs, eq(jobs.id, jobCandidateMatches.jobId))
+    .innerJoin(clients, eq(clients.id, jobs.clientId))
     .where(eq(candidates.sourceVendorId, id));
 
   const resourcesSupplied = supplied.map((r) => ({
@@ -130,6 +176,31 @@ vendorsRoutes.get("/:id", async (c) => {
     jobId: r.job.id,
     jobTitle: r.job.title,
     employmentType: r.job.employmentType,
+    clientName: r.client.name,
+    suppliedAt: r.match.createdAt,
+  }));
+
+  const assigned = await db
+    .select({
+      jobId: jobs.id,
+      jobTitle: jobs.title,
+      clientName: clients.name,
+      sourcingCost: jobVendorAssignments.sourcingCost,
+      assignedAt: jobVendorAssignments.assignedAt,
+      jobStatus: jobs.status,
+    })
+    .from(jobVendorAssignments)
+    .innerJoin(jobs, eq(jobs.id, jobVendorAssignments.jobId))
+    .innerJoin(clients, eq(clients.id, jobs.clientId))
+    .where(eq(jobVendorAssignments.vendorId, id));
+
+  const assignedJobs = assigned.map((a) => ({
+    jobId: a.jobId,
+    jobTitle: a.jobTitle,
+    clientName: a.clientName,
+    sourcingCost: toNum(a.sourcingCost),
+    assignedAt: a.assignedAt,
+    jobStatus: a.jobStatus,
   }));
 
   const performanceStats = computePerformance(await vendorStages(id));
@@ -137,6 +208,7 @@ vendorsRoutes.get("/:id", async (c) => {
   return json(c, {
     ...vendor,
     resourcesSupplied,
+    assignedJobs,
     performanceStats,
   });
 });

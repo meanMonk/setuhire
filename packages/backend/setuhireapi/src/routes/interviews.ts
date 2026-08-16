@@ -39,6 +39,7 @@ interviewsRoutes.get("/", async (c) => {
 
   if (q.job_id) conditions.push(eq(jobs.id, q.job_id));
   if (q.candidate_id) conditions.push(eq(candidates.id, q.candidate_id));
+  if (q.client_id) conditions.push(eq(clients.id, q.client_id));
   if (q.status) {
     if (!isInterviewStatus(q.status)) {
       return error(c, 400, `invalid status: ${q.status}`);

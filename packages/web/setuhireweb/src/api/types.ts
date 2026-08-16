@@ -103,6 +103,8 @@ export type Contract = {
   candidateName?: string;
   clientName?: string;
   vendorName?: string | null;
+  clientId?: string;
+  vendorId?: string | null;
   contractType?: string | null;
   rate?: number | string | null;
   startDate?: string | null;
