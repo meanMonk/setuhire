@@ -1,7 +1,8 @@
-import { and, arrayContains, desc, eq } from "drizzle-orm";
+import { and, arrayContains, count, desc, eq, getTableColumns, max, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import {
   candidates,
+  clients,
   jobCandidateMatches,
   jobVendorAssignments,
   jobs,
@@ -43,18 +44,45 @@ export async function listJobs(filter: JobsFilter) {
   if (filter.status) conditions.push(eq(jobs.status, filter.status));
   if (filter.employmentType) conditions.push(eq(jobs.employmentType, filter.employmentType));
 
+  const matchAgg = db
+    .select({
+      jobId: jobCandidateMatches.jobId,
+      candidatesCount: count(jobCandidateMatches.id).as("candidates_count"),
+      topMatchScore: max(jobCandidateMatches.matchScore).as("top_match_score"),
+    })
+    .from(jobCandidateMatches)
+    .groupBy(jobCandidateMatches.jobId)
+    .as("match_agg");
+
   const rows = await db
-    .select()
+    .select({
+      ...getTableColumns(jobs),
+      clientName: clients.name,
+      candidatesCount: sql<number>`COALESCE(${matchAgg.candidatesCount}, 0)::int`,
+      topMatchScore: matchAgg.topMatchScore,
+    })
     .from(jobs)
+    .leftJoin(clients, eq(jobs.clientId, clients.id))
+    .leftJoin(matchAgg, eq(jobs.id, matchAgg.jobId))
     .where(conditions.length ? and(...conditions) : undefined)
     .orderBy(desc(jobs.createdAt));
 
-  return rows.map(serializeJob);
+  return rows.map((row) => ({
+    ...serializeJob(row),
+    clientName: row.clientName ?? null,
+    candidatesCount: row.candidatesCount ?? 0,
+    topMatchScore: numOrNull(row.topMatchScore),
+  }));
 }
 
 export async function getJob(id: string) {
-  const [job] = await db.select().from(jobs).where(eq(jobs.id, id)).limit(1);
-  return job ? serializeJob(job) : null;
+  const [job] = await db
+    .select({ ...getTableColumns(jobs), clientName: clients.name })
+    .from(jobs)
+    .leftJoin(clients, eq(jobs.clientId, clients.id))
+    .where(eq(jobs.id, id))
+    .limit(1);
+  return job ? { ...serializeJob(job), clientName: job.clientName ?? null } : null;
 }
 
 export type CreateJobInput = {

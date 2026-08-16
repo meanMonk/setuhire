@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { financeExport, financeRecords, financeSummary } from "../../api/pipeline";
 import type { FinanceRecord } from "../../api/types";
-import { Button, ErrorBox, formatInr, Loading, StatusPill, Table } from "../../components/ui";
+import { Button, EmptyState, ErrorBox, formatInr, Loading, StatusPill, Table } from "../../components/ui";
 
 export default function FinanceListPage() {
   const [summary, setSummary] = useState<{
@@ -45,17 +45,22 @@ export default function FinanceListPage() {
     }
   }
 
-  const cards: [string, keyof NonNullable<typeof summary>, string][] = [
-    ["Total Revenue", "totalRevenue", "/finance"],
-    ["Total Commission", "totalCommission", "/finance"],
-    ["Pending Receivables", "pendingReceivables", "/finance"],
-    ["Pending Vendor Payouts", "pendingVendorPayouts", "/finance"],
+  const cards: [string, keyof NonNullable<typeof summary>][] = [
+    ["Total Revenue", "totalRevenue"],
+    ["Total Commission", "totalCommission"],
+    ["Pending Receivables", "pendingReceivables"],
+    ["Pending Vendor Payouts", "pendingVendorPayouts"],
   ];
 
   return (
     <div>
-      <div className="toolbar">
-        <h1 className="page-title">Finance</h1>
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Finance</h1>
+          <p className="page-subtitle">
+            {records.length} record{records.length === 1 ? "" : "s"} in view
+          </p>
+        </div>
         <div className="row">
           <input
             type="month"
@@ -70,7 +75,7 @@ export default function FinanceListPage() {
       {error && <ErrorBox message={error} />}
 
       {summary && (
-        <div className="grid cols-4" style={{ marginBottom: "1rem" }}>
+        <div className="grid cols-4 mb-4">
           {cards.map(([label, key]) => (
             <div key={label} className="stat-card">
               <div className="value">{formatInr(summary[key])}</div>
@@ -82,6 +87,16 @@ export default function FinanceListPage() {
 
       {loading ? (
         <Loading />
+      ) : records.length === 0 ? (
+        <EmptyState
+          icon="finance"
+          title="No finance records yet"
+          description={
+            month
+              ? "No records for this month. Try selecting a different period."
+              : "Finance records will appear here as placements are invoiced and payments are processed."
+          }
+        />
       ) : (
         <Table
           headers={[
@@ -95,16 +110,22 @@ export default function FinanceListPage() {
             "Status",
             "Period",
           ]}
+          footer={
+            <span>
+              Showing {records.length} record
+              {records.length === 1 ? "" : "s"}
+            </span>
+          }
         >
           {records.map((r) => (
             <tr key={r.id}>
-              <td>{r.candidateName ?? "—"}</td>
+              <td className="font-medium">{r.candidateName ?? "—"}</td>
               <td>{r.clientName ?? "—"}</td>
               <td>{r.jobTitle ?? "—"}</td>
               <td>{r.employmentType?.toUpperCase() ?? "—"}</td>
-              <td>{formatInr(r.clientBillingAmount)}</td>
-              <td>{formatInr(r.vendorPayoutAmount)}</td>
-              <td>{formatInr(r.commission)}</td>
+              <td className="whitespace-nowrap text-right">{formatInr(r.clientBillingAmount)}</td>
+              <td className="whitespace-nowrap text-right">{formatInr(r.vendorPayoutAmount)}</td>
+              <td className="whitespace-nowrap text-right">{formatInr(r.commission)}</td>
               <td>
                 <StatusPill status={r.billingStatus} />
               </td>

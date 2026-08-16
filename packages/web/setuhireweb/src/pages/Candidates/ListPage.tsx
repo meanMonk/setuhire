@@ -1,10 +1,21 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { listCandidates } from "../../api/candidates";
 import type { Candidate } from "../../api/types";
-import { Button, ErrorBox, formatInr, Loading, StatusPill, Table, Tags } from "../../components/ui";
+import {
+  Button,
+  EmptyState,
+  ErrorBox,
+  formatInr,
+  Icon,
+  Loading,
+  StatusPill,
+  Table,
+  TechPills,
+} from "../../components/ui";
 
 export default function CandidatesListPage() {
+  const navigate = useNavigate();
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [filters, setFilters] = useState({ skill: "", status: "", source: "" });
   const [loading, setLoading] = useState(true);
@@ -25,24 +36,33 @@ export default function CandidatesListPage() {
 
   return (
     <div>
-      <div className="toolbar">
-        <h1 className="page-title">Candidates</h1>
-        <Link to="/candidates/new">
-          <Button variant="primary">+ Add Candidate</Button>
-        </Link>
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Candidates</h1>
+          <p className="page-subtitle">
+            {candidates.length} candidate{candidates.length === 1 ? "" : "s"} in your talent pool
+          </p>
+        </div>
+        <Button variant="primary" onClick={() => navigate("/candidates/new")}>
+          <Icon name="plus" /> Add Candidate
+        </Button>
       </div>
 
-      <div className="toolbar">
-        <input
-          placeholder="Filter by skill"
-          value={filters.skill}
-          onChange={(e) => setFilters({ ...filters, skill: e.target.value })}
-          style={{ maxWidth: 180 }}
-        />
+      <div className="filter-bar">
+        <div className="filter-field">
+          <Icon name="search" className="filter-icon" />
+          <input
+            placeholder="Filter by skill"
+            value={filters.skill}
+            onChange={(e) => setFilters((f) => ({ ...f, skill: e.target.value }))}
+            style={{ width: 200 }}
+          />
+        </div>
         <select
-          value={filters.status}
-          onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+          className="h-9 rounded-md border border-surface-border bg-white px-3 text-[13px]"
           style={{ width: "auto" }}
+          value={filters.status}
+          onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))}
         >
           <option value="">All statuses</option>
           <option value="available">Available</option>
@@ -50,9 +70,10 @@ export default function CandidatesListPage() {
           <option value="not_looking">Not Looking</option>
         </select>
         <select
-          value={filters.source}
-          onChange={(e) => setFilters({ ...filters, source: e.target.value })}
+          className="h-9 rounded-md border border-surface-border bg-white px-3 text-[13px]"
           style={{ width: "auto" }}
+          value={filters.source}
+          onChange={(e) => setFilters((f) => ({ ...f, source: e.target.value }))}
         >
           <option value="">All sources</option>
           <option value="direct">Direct</option>
@@ -63,22 +84,45 @@ export default function CandidatesListPage() {
       {error && <ErrorBox message={error} />}
       {loading ? (
         <Loading />
+      ) : candidates.length === 0 ? (
+        <EmptyState
+          icon="candidate"
+          title="No candidates yet"
+          description={
+            filters.skill || filters.status || filters.source
+              ? "No candidates match your filters. Try adjusting them."
+              : "Add your first candidate or upload resumes to build your talent pool."
+          }
+          action={
+            !filters.skill && !filters.status && !filters.source ? (
+              <Button variant="primary" onClick={() => navigate("/candidates/new")}>
+                <Icon name="plus" /> Add Your First Candidate
+              </Button>
+            ) : undefined
+          }
+        />
       ) : (
-        <Table headers={["Name", "Skills", "Experience", "Status", "Source", "Rate"]}>
+        <Table
+          headers={["Name", "Skills", "Experience", "Status", "Source", "Rate"]}
+          footer={
+            <span>
+              Showing {candidates.length} candidate
+              {candidates.length === 1 ? "" : "s"}
+            </span>
+          }
+        >
           {candidates.map((c) => (
-            <tr key={c.id}>
+            <tr key={c.id} onClick={() => navigate(`/candidates/${c.id}`)}>
+              <td className="font-medium">{c.name}</td>
               <td>
-                <Link to={`/candidates/${c.id}`}>{c.name}</Link>
+                <TechPills items={c.skills} />
               </td>
-              <td>
-                <Tags items={c.skills} />
-              </td>
-              <td>{c.experienceYears ?? "—"} yrs</td>
+              <td className="whitespace-nowrap">{c.experienceYears ?? "—"} yrs</td>
               <td>
                 <StatusPill status={c.currentStatus} />
               </td>
               <td>{c.sourceType === "vendor" ? c.sourceVendorName ?? "Vendor" : "Direct"}</td>
-              <td>{formatInr(c.rateExpectation)}</td>
+              <td className="whitespace-nowrap text-right">{formatInr(c.rateExpectation)}</td>
             </tr>
           ))}
         </Table>

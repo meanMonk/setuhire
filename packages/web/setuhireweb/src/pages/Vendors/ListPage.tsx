@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { createVendor, getVendorCandidates, listVendors } from "../../api/vendors";
 import type { Candidate, Vendor } from "../../api/types";
-import { Button, ErrorBox, Loading, StatusPill, Table, Tags } from "../../components/ui";
+import { Button, EmptyState, ErrorBox, Icon, Loading, StatusPill, Table, TechPills } from "../../components/ui";
 
 export default function VendorsListPage() {
   const [vendors, setVendors] = useState<Vendor[]>([]);
@@ -55,32 +55,49 @@ export default function VendorsListPage() {
 
   return (
     <div>
-      <div className="toolbar">
-        <h1 className="page-title">Vendors</h1>
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Vendors</h1>
+          <p className="page-subtitle">
+            {vendors.length} vendor{vendors.length === 1 ? "" : "s"} on your bench
+          </p>
+        </div>
         <Button variant="primary" onClick={() => setShowForm((v) => !v)}>
-          {showForm ? "Cancel" : "+ Add Vendor"}
+          <Icon name="plus" /> {showForm ? "Cancel" : "Add Vendor"}
         </Button>
       </div>
 
-      <div className="toolbar">
-        <input
-          placeholder="Filter by specialization"
-          value={specialization}
-          onChange={(e) => setSpecialization(e.target.value)}
-          style={{ maxWidth: 320 }}
-        />
+      <div className="filter-bar">
+        <div className="filter-field">
+          <Icon name="search" className="filter-icon" />
+          <input
+            placeholder="Filter by specialization"
+            value={specialization}
+            onChange={(e) => setSpecialization(e.target.value)}
+            style={{ width: 280 }}
+          />
+        </div>
       </div>
 
       {showForm && (
-        <form className="card" onSubmit={submit}>
+        <form className="card mb-4" onSubmit={submit}>
           <div className="grid cols-2">
             <div className="field">
-              <label>Name</label>
-              <input value={name} onChange={(e) => setName(e.target.value)} required />
+              <label>Vendor Name</label>
+              <input
+                placeholder="e.g. TalentBridge Solutions"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
             </div>
             <div className="field">
-              <label>Specialization (comma-separated)</label>
-              <input value={specs} onChange={(e) => setSpecs(e.target.value)} />
+              <label>Specializations</label>
+              <input
+                placeholder="e.g. React, Node.js, DevOps"
+                value={specs}
+                onChange={(e) => setSpecs(e.target.value)}
+              />
             </div>
           </div>
           <Button type="submit" variant="primary" disabled={busy}>
@@ -92,8 +109,32 @@ export default function VendorsListPage() {
       {error && <ErrorBox message={error} />}
       {loading ? (
         <Loading />
+      ) : vendors.length === 0 ? (
+        <EmptyState
+          icon="vendors"
+          title="No vendors yet"
+          description={
+            specialization
+              ? "No vendors match your search. Try a different specialization."
+              : "Add your first vendor to start receiving candidate submissions."
+          }
+          action={
+            !specialization ? (
+              <Button variant="primary" onClick={() => setShowForm(true)}>
+                <Icon name="plus" /> Add Your First Vendor
+              </Button>
+            ) : undefined
+          }
+        />
       ) : (
-        <Table headers={["Name", "Specialization", "Status"]}>
+        <Table
+          headers={["Name", "Specialization", "Status"]}
+          footer={
+            <span>
+              Showing {vendors.length} vendor{vendors.length === 1 ? "" : "s"}
+            </span>
+          }
+        >
           {vendors.map((v) => (
             <VendorRow key={v.id} vendor={v} />
           ))}
@@ -125,14 +166,14 @@ function VendorRow({ vendor }: { vendor: Vendor }) {
 
   return (
     <>
-      <tr onClick={toggle} style={{ cursor: "pointer" }}>
-        <td>
+      <tr onClick={toggle}>
+        <td className="font-medium">
           <Link to={`/vendors/${vendor.id}`} onClick={(e) => e.stopPropagation()}>
             {vendor.name}
           </Link>
         </td>
         <td>
-          <Tags items={vendor.specialization} />
+          <TechPills items={vendor.specialization} />
         </td>
         <td>
           <StatusPill status={vendor.status} />
@@ -140,13 +181,13 @@ function VendorRow({ vendor }: { vendor: Vendor }) {
       </tr>
       {open && (
         <tr>
-          <td colSpan={3} style={{ background: "#fafbfc" }}>
+          <td colSpan={3} className="bg-surface-bg/50">
             {loadingCands ? (
               <div className="muted">Loading candidates…</div>
             ) : candidates.length === 0 ? (
               <div className="muted">No candidates sourced by this vendor.</div>
             ) : (
-              <ul style={{ margin: 0, paddingLeft: "1.2rem" }}>
+              <ul className="m-0 pl-5">
                 {candidates.map((c) => (
                   <li key={c.id}>
                     <Link to={`/candidates/${c.id}`}>{c.name}</Link>

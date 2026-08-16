@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   createJob,
@@ -6,7 +6,9 @@ import {
   parseJobText,
   type JobPreview,
 } from "../../api/jobs";
-import { Button, ErrorBox, Tags } from "../../components/ui";
+import { listClients } from "../../api/clients";
+import type { Client } from "../../api/types";
+import { Button, EmptyState, ErrorBox, Tags } from "../../components/ui";
 
 export default function AddJobPage() {
   const navigate = useNavigate();
@@ -17,6 +19,7 @@ export default function AddJobPage() {
   const [parsing, setParsing] = useState(false);
   const [error, setError] = useState("");
 
+  const [clients, setClients] = useState<Client[]>([]);
   const [clientId, setClientId] = useState("");
   const [title, setTitle] = useState("");
   const [experience, setExperience] = useState("");
@@ -24,6 +27,12 @@ export default function AddJobPage() {
   const [tsc, setTsc] = useState("");
   const [techStack, setTechStack] = useState("");
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    listClients()
+      .then(setClients)
+      .catch(() => setClients([]));
+  }, []);
 
   async function onParse() {
     setParsing(true);
@@ -74,9 +83,28 @@ export default function AddJobPage() {
     }
   }
 
+  if (clients.length === 0) {
+    return (
+      <div>
+        <h1 className="page-title">Add Job</h1>
+        <EmptyState
+          icon="clients"
+          title="Add a client first"
+          description="You need at least one client before you can create a job. Go to Clients to add one."
+          action={
+            <Button variant="primary" onClick={() => navigate("/clients")}>
+              Go to Clients
+            </Button>
+          }
+        />
+      </div>
+    );
+  }
+
   return (
     <div>
       <h1 className="page-title">Add Job</h1>
+      <p className="page-subtitle">Import a job from a URL or paste the description, then save it.</p>
 
       <div className="row" style={{ marginBottom: "1rem" }}>
         <Button variant={mode === "url" ? "primary" : undefined} onClick={() => setMode("url")}>
@@ -145,31 +173,60 @@ export default function AddJobPage() {
         <h3>Save Job</h3>
         <div className="grid cols-2">
           <div className="field">
-            <label>Client ID</label>
-            <input value={clientId} onChange={(e) => setClientId(e.target.value)} required />
+            <label>Client</label>
+            <select
+              value={clientId}
+              onChange={(e) => setClientId(e.target.value)}
+              required
+            >
+              <option value="">Select a client</option>
+              {clients.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
           </div>
           <div className="field">
-            <label>Title</label>
-            <input value={title} onChange={(e) => setTitle(e.target.value)} required />
+            <label>Job Title</label>
+            <input
+              placeholder="e.g. Senior React Developer"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+            />
           </div>
           <div className="field">
             <label>Experience Required</label>
-            <input value={experience} onChange={(e) => setExperience(e.target.value)} />
+            <input
+              placeholder="e.g. 5+ years"
+              value={experience}
+              onChange={(e) => setExperience(e.target.value)}
+            />
           </div>
           <div className="field">
             <label>Employment Type</label>
             <select value={employmentType} onChange={(e) => setEmploymentType(e.target.value)}>
               <option value="contract">Contract</option>
-              <option value="fte">FTE</option>
+              <option value="fte">Full-time (FTE)</option>
             </select>
           </div>
           <div className="field">
-            <label>Target Selling Cost (INR)</label>
-            <input value={tsc} onChange={(e) => setTsc(e.target.value)} type="number" />
+            <label>Target Cost (₹)</label>
+            <input
+              placeholder="e.g. 1500000"
+              value={tsc}
+              onChange={(e) => setTsc(e.target.value)}
+              type="number"
+            />
           </div>
           <div className="field">
-            <label>Tech Stack (comma-separated)</label>
-            <input value={techStack} onChange={(e) => setTechStack(e.target.value)} />
+            <label>Key Skills</label>
+            <input
+              placeholder="e.g. React, Node.js, TypeScript"
+              value={techStack}
+              onChange={(e) => setTechStack(e.target.value)}
+            />
           </div>
         </div>
         <Button type="submit" variant="primary" disabled={saving}>

@@ -30,8 +30,63 @@ export type MatchResult = {
   rate_fit: "ok" | "above_tsc";
 };
 
-const MODEL = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-4-20250514";
 const MAX_TOKENS = 1500;
+
+type LLMProvider = "deepseek" | "openrouter" | "anthropic";
+
+type LLMConfig = {
+  provider: LLMProvider;
+  apiKey: string;
+  baseUrl: string;
+  model: string;
+};
+
+function llmConfig(): LLMConfig | null {
+  const explicit = (process.env.LLM_PROVIDER ?? "").trim().toLowerCase();
+  const order: LLMProvider[] =
+    explicit === "" ? ["deepseek", "openrouter", "anthropic"] : ([explicit] as LLMProvider[]);
+
+  for (const provider of order) {
+    const cfg = configFor(provider);
+    if (cfg) return cfg;
+  }
+  return null;
+}
+
+function configFor(provider: LLMProvider): LLMConfig | null {
+  switch (provider) {
+    case "deepseek": {
+      const apiKey = process.env.DEEPSEEK_API_KEY;
+      if (!apiKey) return null;
+      return {
+        provider,
+        apiKey,
+        baseUrl: (process.env.DEEPSEEK_BASE_URL ?? "https://api.deepseek.com").replace(/\/+$/, ""),
+        model: process.env.DEEPSEEK_MODEL ?? "deepseek-chat",
+      };
+    }
+    case "openrouter": {
+      const apiKey = process.env.OPENROUTER_API_KEY;
+      if (!apiKey) return null;
+      return {
+        provider,
+        apiKey,
+        baseUrl: (process.env.OPENROUTER_BASE_URL ?? "https://openrouter.ai/api/v1").replace(/\/+$/, ""),
+        model: process.env.OPENROUTER_MODEL ?? "deepseek/deepseek-chat",
+      };
+    }
+    case "anthropic": {
+      const apiKey = process.env.ANTHROPIC_API_KEY;
+      if (!apiKey) return null;
+      return {
+        provider,
+        apiKey,
+        baseUrl: "",
+        model: process.env.ANTHROPIC_MODEL ?? "claude-sonnet-4-20250514",
+      };
+    }
+  }
+}
 
 const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9+#]/g, "");
 
@@ -80,16 +135,6 @@ const titleCase = (s: string) =>
 
 const clamp = (n: number, lo = 0, hi = 100) => Math.min(hi, Math.max(lo, n));
 
-function getClient(): Anthropic | null {
-  const key = process.env.ANTHROPIC_API_KEY;
-  if (!key) return null;
-  try {
-    return new Anthropic({ apiKey: key });
-  } catch {
-    return null;
-  }
-}
-
 function stripFences(text: string): string {
   return text
     .replace(/```(?:json)?/gi, "")
@@ -114,11 +159,17 @@ function parseJson<T>(text: string): T | null {
 }
 
 async function complete(system: string, user: string): Promise<string | null> {
-  const client = getClient();
-  if (!client) return null;
+  const cfg = llmConfig();
+  if (!cfg) return null;
+  if (cfg.provider === "anthropic") return completeAnthropic(cfg, system, user);
+  return completeOpenAI(cfg, system, user);
+}
+
+async function completeAnthropic(cfg: LLMConfig, system: string, user: string): Promise<string | null> {
   try {
+    const client = new Anthropic({ apiKey: cfg.apiKey });
     const res = await client.messages.create({
-      model: MODEL,
+      model: cfg.model,
       max_tokens: MAX_TOKENS,
       system,
       messages: [{ role: "user", content: user }],
@@ -127,6 +178,38 @@ async function complete(system: string, user: string): Promise<string | null> {
       .map((b) => (b.type === "text" ? b.text : ""))
       .join("\n")
       .trim();
+  } catch {
+    return null;
+  }
+}
+
+async function completeOpenAI(cfg: LLMConfig, system: string, user: string): Promise<string | null> {
+  try {
+    const res = await fetch(`${cfg.baseUrl}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${cfg.apiKey}`,
+        ...(cfg.provider === "openrouter"
+          ? {
+              "HTTP-Referer": process.env.OPENROUTER_REFERER ?? "http://localhost:3001",
+              "X-Title": "SetuHire",
+            }
+          : {}),
+      },
+      body: JSON.stringify({
+        model: cfg.model,
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: user },
+        ],
+        max_tokens: MAX_TOKENS,
+        response_format: { type: "json_object" },
+      }),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { choices?: { message?: { content?: string } }[] };
+    return data.choices?.[0]?.message?.content?.trim() ?? null;
   } catch {
     return null;
   }
@@ -237,7 +320,7 @@ export async function parseJobFromUrl(url: string): Promise<JobPreview> {
     employment_type: null,
     seniority: null,
   };
-  if (!getClient()) return fallback;
+  if (!llmConfig()) return fallback;
 
   const pageText = await fetchUrlText(url);
   const input = pageText ?? url;
@@ -271,7 +354,7 @@ export async function parseJobFromText(rawText: string): Promise<JobPreview> {
     employment_type: null,
     seniority: null,
   };
-  if (!getClient() || !(rawText ?? "").trim()) return fallback;
+  if (!llmConfig() || !(rawText ?? "").trim()) return fallback;
 
   const out = await complete(JOB_SYSTEM, rawText);
   if (!out) return fallback;
@@ -300,7 +383,7 @@ export async function parseResume(buffer: Buffer, filename: string): Promise<Can
     experience_years: null,
     roles: [{ title: titleCase(base) || "Unknown role", company: "Unknown company" }],
   };
-  if (!getClient()) return fallback;
+  if (!llmConfig()) return fallback;
 
   const text = extractTextFromBuffer(buffer ?? Buffer.alloc(0));
   if (!text) return fallback;
@@ -326,8 +409,7 @@ function fallbackRationale(mustMatched: string[], expYears: number | null, minEx
 }
 
 async function enrichRationales(job: Job, results: MatchResult[], mustHave: string[], niceHave: string[]): Promise<void> {
-  const client = getClient();
-  if (!client) return;
+  if (!llmConfig()) return;
   const parsed = job.parsedRequirements ?? null;
   const preview = {
     title: job.title,

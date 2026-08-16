@@ -1,11 +1,7 @@
 import { useEffect, useState } from "react";
-import {
-  createInterview,
-  listInterviews,
-  updateInterview,
-} from "../../api/pipeline";
+import { createInterview, listInterviews, updateInterview } from "../../api/pipeline";
 import type { Interview } from "../../api/types";
-import { Button, ErrorBox, Loading, StatusPill, Table } from "../../components/ui";
+import { Button, EmptyState, ErrorBox, Icon, Loading, StatusPill, Table } from "../../components/ui";
 
 export default function InterviewsListPage() {
   const [interviews, setInterviews] = useState<Interview[]>([]);
@@ -65,8 +61,13 @@ export default function InterviewsListPage() {
 
   return (
     <div>
-      <div className="toolbar">
-        <h1 className="page-title">Interviews</h1>
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Interviews</h1>
+          <p className="page-subtitle">
+            {interviews.length} interview{interviews.length === 1 ? "" : "s"} on the calendar
+          </p>
+        </div>
         <div className="row">
           <Button variant={view === "list" ? "primary" : undefined} onClick={() => setView("list")}>
             List
@@ -75,34 +76,49 @@ export default function InterviewsListPage() {
             variant={view === "calendar" ? "primary" : undefined}
             onClick={() => setView("calendar")}
           >
-            Calendar
+            <Icon name="calendar" /> Calendar
           </Button>
           <Button variant="primary" onClick={() => setShowForm((v) => !v)}>
-            {showForm ? "Cancel" : "+ Schedule"}
+            <Icon name="plus" /> {showForm ? "Cancel" : "Schedule"}
           </Button>
         </div>
       </div>
 
-      <div className="toolbar">
-        <select value={status} onChange={(e) => setStatus(e.target.value)} style={{ width: "auto" }}>
+      <div className="filter-bar">
+        <select
+          className="h-9 rounded-md border border-surface-border bg-white px-3 text-[13px]"
+          style={{ width: "auto" }}
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+        >
           <option value="">All statuses</option>
           <option value="scheduled">Scheduled</option>
           <option value="cleared">Cleared</option>
           <option value="rejected">Rejected</option>
           <option value="no_show">No Show</option>
         </select>
-        <label style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+        <label className="mb-0 flex items-center gap-2 text-[13px] text-ink-600">
           From
-          <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} style={{ width: "auto" }} />
+          <input
+            type="date"
+            value={from}
+            onChange={(e) => setFrom(e.target.value)}
+            style={{ width: "auto" }}
+          />
         </label>
-        <label style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+        <label className="mb-0 flex items-center gap-2 text-[13px] text-ink-600">
           To
-          <input type="date" value={to} onChange={(e) => setTo(e.target.value)} style={{ width: "auto" }} />
+          <input
+            type="date"
+            value={to}
+            onChange={(e) => setTo(e.target.value)}
+            style={{ width: "auto" }}
+          />
         </label>
       </div>
 
       {showForm && (
-        <form className="card" onSubmit={submit}>
+        <form className="card mb-4" onSubmit={submit}>
           <div className="grid cols-2">
             <div className="field">
               <label>Match ID</label>
@@ -118,7 +134,11 @@ export default function InterviewsListPage() {
             </div>
             <div className="field">
               <label>Scheduled At</label>
-              <input type="datetime-local" value={scheduledAt} onChange={(e) => setScheduledAt(e.target.value)} />
+              <input
+                type="datetime-local"
+                value={scheduledAt}
+                onChange={(e) => setScheduledAt(e.target.value)}
+              />
             </div>
           </div>
           <Button type="submit" variant="primary" disabled={busy}>
@@ -131,9 +151,32 @@ export default function InterviewsListPage() {
 
       {loading ? (
         <Loading />
+      ) : interviews.length === 0 ? (
+        <EmptyState
+          icon="calendar"
+          title="No interviews scheduled"
+          description={
+            status || from || to
+              ? "No interviews match your filters. Try adjusting them."
+              : "Schedule your first interview to track candidate progress."
+          }
+          action={
+            !status && !from && !to ? (
+              <Button variant="primary" onClick={() => setShowForm(true)}>
+                <Icon name="plus" /> Schedule Interview
+              </Button>
+            ) : undefined
+          }
+        />
       ) : view === "list" ? (
         <Table
           headers={["Candidate", "Job", "Client", "Round", "Interviewer", "Scheduled", "Status"]}
+          footer={
+            <span>
+              Showing {interviews.length} interview
+              {interviews.length === 1 ? "" : "s"}
+            </span>
+          }
         >
           {interviews.map((i) => (
             <InterviewRow key={i.id} interview={i} />
@@ -164,13 +207,13 @@ function InterviewRow({ interview }: { interview: Interview }) {
 
   return (
     <>
-      <tr onClick={() => setOpen((v) => !v)} style={{ cursor: "pointer" }}>
-        <td>{interview.candidateName ?? "—"}</td>
+      <tr onClick={() => setOpen((v) => !v)}>
+        <td className="font-medium">{interview.candidateName ?? "—"}</td>
         <td>{interview.jobTitle ?? "—"}</td>
         <td>{interview.clientName ?? "—"}</td>
         <td>{interview.round ?? "—"}</td>
         <td>{interview.interviewer ?? "—"}</td>
-        <td>
+        <td className="whitespace-nowrap">
           {interview.scheduledAt ? new Date(interview.scheduledAt).toLocaleString() : "—"}
         </td>
         <td>
@@ -179,7 +222,7 @@ function InterviewRow({ interview }: { interview: Interview }) {
       </tr>
       {open && (
         <tr>
-          <td colSpan={7} style={{ background: "#fafbfc" }}>
+          <td colSpan={7} className="bg-surface-bg/50">
             <div className="row">
               <textarea
                 rows={2}
@@ -207,24 +250,21 @@ function CalendarView({ interviews }: { interviews: Interview[] }) {
     byDay.set(key, [...(byDay.get(key) ?? []), i]);
   }
   const days = [...byDay.keys()].sort();
+  if (days.length === 0) return <div className="muted">No scheduled interviews.</div>;
   return (
     <div className="grid cols-3">
-      {days.length === 0 ? (
-        <div className="muted">No scheduled interviews.</div>
-      ) : (
-        days.map((d) => (
-          <div key={d} className="card">
-            <h3>{d}</h3>
-            <ul style={{ margin: 0, paddingLeft: "1.2rem" }}>
-              {(byDay.get(d) ?? []).map((i) => (
-                <li key={i.id}>
-                  {i.candidateName} <span className="muted">· {i.round}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))
-      )}
+      {days.map((d) => (
+        <div key={d} className="card">
+          <h3 className="mb-2 font-heading text-[13px] font-semibold">{d}</h3>
+          <ul className="m-0 pl-5">
+            {(byDay.get(d) ?? []).map((i) => (
+              <li key={i.id}>
+                {i.candidateName} <span className="muted">· {i.round}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
     </div>
   );
 }

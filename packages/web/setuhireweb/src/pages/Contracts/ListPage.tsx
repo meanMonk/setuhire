@@ -1,7 +1,16 @@
 import { useEffect, useState } from "react";
 import { getExpiringContracts, listContracts } from "../../api/pipeline";
 import type { Contract } from "../../api/types";
-import { Badge, ErrorBox, formatInr, Loading, StatusPill, Table } from "../../components/ui";
+import {
+  Badge,
+  Button,
+  EmptyState,
+  ErrorBox,
+  formatInr,
+  Loading,
+  StatusPill,
+  Table,
+} from "../../components/ui";
 
 export default function ContractsListPage() {
   const [contracts, setContracts] = useState<Contract[]>([]);
@@ -24,30 +33,48 @@ export default function ContractsListPage() {
 
   return (
     <div>
-      <h1 className="page-title">Contracts</h1>
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Contracts</h1>
+          <p className="page-subtitle">
+            {contracts.length} contract{contracts.length === 1 ? "" : "s"} on file
+          </p>
+        </div>
+      </div>
+
       {error && <ErrorBox message={error} />}
 
       <div className="side-by-side">
         <div>
           {loading ? (
             <Loading />
+          ) : contracts.length === 0 ? (
+            <EmptyState
+              icon="contract"
+              title="No contracts yet"
+              description="Contracts will appear here once candidates are placed through your pipeline."
+            />
           ) : (
             <Table
               headers={["Candidate", "Client", "Vendor", "Type", "Rate", "Start", "End", "Status"]}
+              footer={
+                <span>
+                  Showing {contracts.length} contract
+                  {contracts.length === 1 ? "" : "s"}
+                </span>
+              }
             >
               {contracts.map((c) => (
-                <tr
-                  key={c.id}
-                  onClick={() => setSelected(c)}
-                  style={{ cursor: "pointer" }}
-                >
-                  <td>{c.candidateName ?? "—"}</td>
+                <tr key={c.id} onClick={() => setSelected(c)}>
+                  <td className="font-medium">{c.candidateName ?? "—"}</td>
                   <td>{c.clientName ?? "—"}</td>
                   <td>{c.vendorName ?? "—"}</td>
                   <td>{c.contractType ?? "—"}</td>
-                  <td>{formatInr(c.rate)}</td>
-                  <td>{c.startDate ? new Date(c.startDate).toLocaleDateString() : "—"}</td>
-                  <td>
+                  <td className="whitespace-nowrap text-right">{formatInr(c.rate)}</td>
+                  <td className="whitespace-nowrap">
+                    {c.startDate ? new Date(c.startDate).toLocaleDateString() : "—"}
+                  </td>
+                  <td className="whitespace-nowrap">
                     {c.endDate ? new Date(c.endDate).toLocaleDateString() : "—"}
                     {expiringIds.has(c.id) && <Badge tone="red">Expiring</Badge>}
                   </td>
@@ -62,11 +89,12 @@ export default function ContractsListPage() {
 
         {selected && (
           <div className="panel" style={{ alignSelf: "start" }}>
-            <h3>Contract Details</h3>
-            <p>
-              <strong>{selected.candidateName}</strong>
-            </p>
-            <div className="muted">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="m-0 font-heading text-[13px] font-semibold">Contract Details</h3>
+              <Button onClick={() => setSelected(null)}>Close</Button>
+            </div>
+            <p className="font-medium">{selected.candidateName}</p>
+            <div className="muted text-[13px]">
               <div>Client: {selected.clientName ?? "—"}</div>
               <div>Vendor: {selected.vendorName ?? "—"}</div>
               <div>Type: {selected.contractType ?? "—"}</div>
@@ -88,9 +116,6 @@ export default function ContractsListPage() {
                 )}
               </div>
             </div>
-            <button onClick={() => setSelected(null)} style={{ marginTop: "0.75rem" }}>
-              Close
-            </button>
           </div>
         )}
       </div>
