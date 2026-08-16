@@ -33,23 +33,7 @@ const SECTIONS: { label: string; items: NavItem[] }[] = [
 ];
 
 function LogoMark() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.4"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M4 19c4-6 12-6 16 0" />
-      <path d="M7 19V9" />
-      <path d="M17 19V9" />
-    </svg>
-  );
+  return <img src="/logo.png" alt="SetuHire" />;
 }
 
 export default function Layout() {
