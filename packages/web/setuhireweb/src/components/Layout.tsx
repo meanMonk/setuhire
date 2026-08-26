@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { canAccess } from "../auth/rbac";
 import { Avatar, Icon, type IconName } from "./ui";
 
 type NavItem = [label: string, to: string, icon: IconName];
@@ -58,17 +59,23 @@ export default function Layout() {
         </div>
 
         <nav className="sidebar-nav">
-          {SECTIONS.map((section) => (
-            <div key={section.label}>
-              <div className="sidebar-section">{section.label}</div>
-              {section.items.map(([label, to, icon]) => (
-                <NavLink key={to} to={to} end={to === "/"} className="sidebar-link">
-                  <Icon name={icon} className="nav-icon" />
-                  <span className="sidebar-label">{label}</span>
-                </NavLink>
-              ))}
-            </div>
-          ))}
+          {SECTIONS.map((section) => {
+            const items = section.items.filter(([, to]) =>
+              canAccess(user?.role, to),
+            );
+            if (items.length === 0) return null;
+            return (
+              <div key={section.label}>
+                <div className="sidebar-section">{section.label}</div>
+                {items.map(([label, to, icon]) => (
+                  <NavLink key={to} to={to} end={to === "/"} className="sidebar-link">
+                    <Icon name={icon} className="nav-icon" />
+                    <span className="sidebar-label">{label}</span>
+                  </NavLink>
+                ))}
+              </div>
+            );
+          })}
         </nav>
 
         <div className="sidebar-user">

@@ -298,6 +298,53 @@
     @apply text-[12px] text-ink-400;
   }
 
+  /* Dashboard --------------------------------------------------------- */
+  .dash-grid {
+    @apply grid gap-4 sm:grid-cols-2 lg:grid-cols-3;
+  }
+  .stat-tile {
+    @apply flex items-center gap-4 rounded-card border border-surface-border bg-surface-card p-5 shadow-card transition-all hover:-translate-y-0.5 hover:border-primary-400 hover:shadow-lg;
+  }
+  .stat-tile .value {
+    @apply block font-heading text-[22px] font-semibold leading-tight text-ink-900;
+  }
+  .stat-tile .label {
+    @apply block text-[12px] text-ink-400;
+  }
+  .stat-icon {
+    @apply flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-lg;
+  }
+  .tint-accent {
+    @apply bg-accent-100 text-accent-700;
+  }
+  .tint-warning {
+    @apply bg-warning-100 text-warning-700;
+  }
+  .tint-secondary {
+    @apply bg-secondary-100 text-secondary-700;
+  }
+  .tint-neutral {
+    @apply bg-ink-200/60 text-ink-600;
+  }
+  .tint-danger {
+    @apply bg-danger-100 text-danger-700;
+  }
+  .card-title {
+    @apply mb-3 font-heading text-[13px] font-semibold uppercase tracking-wide text-ink-400;
+  }
+  .feed-dot {
+    @apply mt-1.5 h-2 w-2 shrink-0 rounded-full;
+  }
+  .feed-link {
+    @apply font-medium hover:text-primary-700;
+  }
+  .stage-move {
+    @apply flex items-center gap-1.5 text-[12px] text-ink-400 capitalize;
+  }
+  .stage-arrow {
+    @apply text-ink-400;
+  }
+
   /* Badges & status pills ------------------------------------------- */
   .badge {
     @apply inline-flex items-center gap-1 rounded-full bg-ink-200/60 px-2.5 py-0.5 text-[11px] font-semibold text-ink-600;
@@ -388,6 +435,16 @@
   }
   .login-wrap h1 {
     @apply mb-1 font-heading text-xl font-semibold;
+  }
+
+  .demo-accounts {
+    @apply mt-6 border-t border-surface-border pt-4;
+  }
+  .demo-accounts p {
+    @apply mb-2 text-xs;
+  }
+  .demo-account {
+    @apply block w-full rounded-md px-2 py-1.5 text-left text-xs text-ink-600 hover:bg-primary-50 hover:text-primary-700;
   }
 
   .divider {

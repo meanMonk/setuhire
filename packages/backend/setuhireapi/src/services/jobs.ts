@@ -194,7 +194,9 @@ export async function getPipelineSummary(jobId: string) {
     const stage = row.stage ?? "applied";
     summary[stage] = (summary[stage] ?? 0) + 1;
   }
-  return summary;
+  return Object.entries(summary)
+    .filter(([, count]) => count > 0)
+    .map(([stage, count]) => ({ stage, count }));
 }
 
 export async function assignVendor(jobId: string, vendorId: string, sourcingCost: number | null) {

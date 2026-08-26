@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { get } from "../api/client";
 import type { ActivityLogItem, AttentionFeedItem, DashboardSummary } from "../api/types";
-import { Badge, Card, EmptyState, ErrorBox, formatInr, Loading } from "../components/ui";
+import { EmptyState, ErrorBox, formatInr, Icon, Loading } from "../components/ui";
 
 function isoDate(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
@@ -16,24 +16,62 @@ monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
 const sunday = new Date(monday);
 sunday.setDate(sunday.getDate() + 6);
 
-const STATS: { key: keyof DashboardSummary; label: string; to: string; money?: boolean }[] = [
-  { key: "activeClients", label: "Active Clients", to: "/clients" },
-  { key: "openJobs", label: "Open Jobs", to: "/jobs" },
-  { key: "candidatesAvailable", label: "Available Candidates", to: "/candidates" },
-  { key: "vendorsEngaged", label: "Active Vendors", to: "/vendors" },
+type StatDef = {
+  key: keyof DashboardSummary;
+  label: string;
+  to: string;
+  icon: Parameters<typeof Icon>[0]["name"];
+  tint: "accent" | "warning" | "secondary" | "neutral" | "danger";
+  money?: boolean;
+};
+
+const STATS: StatDef[] = [
+  { key: "activeClients", label: "Active Clients", to: "/clients", icon: "clients", tint: "accent" },
+  { key: "openJobs", label: "Open Jobs", to: "/jobs", icon: "jobs", tint: "secondary" },
+  {
+    key: "candidatesAvailable",
+    label: "Available Candidates",
+    to: "/candidates",
+    icon: "candidate",
+    tint: "warning",
+  },
+  { key: "vendorsEngaged", label: "Active Vendors", to: "/vendors", icon: "vendors", tint: "neutral" },
   {
     key: "interviewsThisWeek",
     label: "Interviews This Week",
     to: `/interviews?from=${isoDate(monday)}&to=${isoDate(sunday)}`,
+    icon: "calendar",
+    tint: "accent",
   },
-  { key: "pendingBillingAmount", label: "Pending Billing", to: "/finance?billing_status=pending", money: true },
+  {
+    key: "pendingBillingAmount",
+    label: "Pending Billing",
+    to: "/finance?billing_status=pending",
+    icon: "finance",
+    tint: "danger",
+    money: true,
+  },
 ];
 
-const TONE: Record<string, string> = {
-  match: "green",
-  vendor: "yellow",
-  interview: "blue",
+const FEED_TONE: Record<string, string> = {
+  match: "accent",
+  vendor: "warning",
+  interview: "secondary",
 };
+
+function relTime(at?: string | null): string {
+  if (!at) return "";
+  const t = new Date(at).getTime();
+  if (Number.isNaN(t)) return "";
+  const mins = Math.floor((Date.now() - t) / 60_000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Date(at).toLocaleDateString();
+}
 
 export default function Dashboard() {
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
@@ -69,40 +107,53 @@ export default function Dashboard() {
 
       {error && <ErrorBox message={error} />}
 
-      <div className="grid cols-3">
+      <div className="dash-grid mb-5">
         {STATS.map((stat) => (
-          <Link key={stat.key} to={stat.to} className="stat-card">
-            <div className="value">
-              {stat.money
-                ? formatInr(summary?.[stat.key] ?? null)
-                : (summary?.[stat.key] ?? 0)}
-            </div>
-            <div className="label">{stat.label}</div>
+          <Link key={stat.key} to={stat.to} className="stat-tile">
+            <span className={`stat-icon tint-${stat.tint}`}>
+              <Icon name={stat.icon} />
+            </span>
+            <span>
+              <span className="value">
+                {stat.money
+                  ? formatInr(summary?.[stat.key] ?? null)
+                  : (summary?.[stat.key] ?? 0)}
+              </span>
+              <span className="label">{stat.label}</span>
+            </span>
           </Link>
         ))}
       </div>
 
-      <div className="side-by-side mt-4">
-        <Card title="Needs Your Attention">
+      <div className="side-by-side">
+        <section className="card">
+          <h3 className="card-title">Needs Your Attention</h3>
           {feed.length === 0 ? (
             <EmptyState
               icon="inbox"
               title="All clear!"
-              description="Nothing needs your attention right now. Great job keeping things on track."
+              description="Nothing needs your attention right now."
             />
           ) : (
             <ul className="feed">
               {feed.map((item, i) => (
                 <li key={i} className="feed-item">
-                  <Badge tone={TONE[item.type ?? ""] ?? "gray"}>{item.type ?? "info"}</Badge>
-                  {item.link ? <Link to={item.link}>{item.message}</Link> : <span>{item.message}</span>}
+                  <span className={`feed-dot tint-${FEED_TONE[item.type ?? ""] ?? "neutral"}`} />
+                  {item.link ? (
+                    <Link to={item.link} className="feed-link">
+                      {item.message}
+                    </Link>
+                  ) : (
+                    <span>{item.message}</span>
+                  )}
                 </li>
               ))}
             </ul>
           )}
-        </Card>
+        </section>
 
-        <Card title="Recent Activity">
+        <section className="card">
+          <h3 className="card-title">Recent Activity</h3>
           {activity.length === 0 ? (
             <EmptyState
               icon="calendar"
@@ -113,19 +164,25 @@ export default function Dashboard() {
             <ul className="feed">
               {activity.map((item, i) => (
                 <li key={i} className="feed-item">
-                  <div>
-                    {item.candidate && <strong>{item.candidate}</strong>}
-                    {item.job && <span className="muted"> → {item.job}</span>}
+                  <div className="flex items-baseline justify-between gap-3">
+                    <div>
+                      {item.candidate && <strong>{item.candidate}</strong>}
+                      {item.job && <span className="muted"> → {item.job}</span>}
+                    </div>
+                    <span className="shrink-0 text-[11px] text-ink-400">{relTime(item.at)}</span>
                   </div>
-                  <div className="muted text-[12px]">
-                    {item.from && item.to ? `${item.from} → ${item.to}` : item.to}
-                    {item.at ? ` · ${new Date(item.at).toLocaleString()}` : ""}
-                  </div>
+                  {(item.from || item.to) && (
+                    <div className="stage-move">
+                      <span>{item.from ?? "—"}</span>
+                      <span className="stage-arrow">→</span>
+                      <span className="font-medium text-ink-900">{item.to}</span>
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>
           )}
-        </Card>
+        </section>
       </div>
     </div>
   );

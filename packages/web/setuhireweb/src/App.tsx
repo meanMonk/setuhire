@@ -1,5 +1,5 @@
 import { Route, Routes } from "react-router-dom";
-import { RequireAuth } from "./auth/AuthContext";
+import { RequireAuth, RequireRole } from "./auth/AuthContext";
 import Layout from "./components/Layout";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -24,7 +24,9 @@ export default function App() {
       <Route
         element={
           <RequireAuth>
-            <Layout />
+            <RequireRole>
+              <Layout />
+            </RequireRole>
           </RequireAuth>
         }
       >

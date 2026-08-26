@@ -11,6 +11,7 @@ import {
   EmptyState,
   ErrorBox,
   formatInr,
+  Icon,
   Loading,
   StatusPill,
   Table,
@@ -139,7 +140,13 @@ export default function ContractsListPage() {
           </p>
         </div>
         <Button variant="primary" onClick={() => (showForm ? setShowForm(false) : openForm())}>
-          {showForm ? "Cancel" : "+ New contract"}
+          {showForm ? (
+            "Cancel"
+          ) : (
+            <>
+              <Icon name="plus" /> New Contract
+            </>
+          )}
         </Button>
       </div>
 
@@ -256,76 +263,80 @@ export default function ContractsListPage() {
 
       {error && <ErrorBox message={error} />}
 
-      <div className="side-by-side">
-        <div>
-          {loading ? (
-            <Loading />
-          ) : filtered.length === 0 ? (
-            <EmptyState
-              icon="contract"
-              title="No contracts yet"
-              description="Contracts will appear here once candidates are placed through your pipeline."
-            />
-          ) : (
-            <Table
-              headers={[
-                "Candidate",
-                "Client",
-                "Vendor",
-                "Type",
-                "Rate",
-                "Start",
-                "End",
-                "Status",
-                "Doc",
-                "Flags",
-              ]}
-              footer={
-                <span>
-                  Showing {filtered.length} contract{filtered.length === 1 ? "" : "s"}
-                </span>
-              }
-            >
-              {filtered.map((c) => {
-                const d = daysUntil(c.endDate);
-                return (
-                  <tr key={c.id} onClick={() => setSelected(c)}>
-                    <td className="font-medium">{c.candidateName ?? "—"}</td>
-                    <td>{c.clientName ?? "—"}</td>
-                    <td>{c.vendorName ?? "—"}</td>
-                    <td>{c.contractType ?? "—"}</td>
-                    <td className="whitespace-nowrap text-right">{formatInr(c.rate)}</td>
-                    <td className="whitespace-nowrap">
-                      {c.startDate ? new Date(c.startDate).toLocaleDateString() : "—"}
-                    </td>
-                    <td className="whitespace-nowrap">
-                      {c.endDate ? new Date(c.endDate).toLocaleDateString() : "—"}
-                    </td>
-                    <td>
-                      <StatusPill status={c.status} />
-                    </td>
-                    <td>{c.documentUrl ? "📄" : "—"}</td>
-                    <td className="whitespace-nowrap">
-                      {isExpiring(c) && <Badge tone="red">Ends in {d}d</Badge>}
-                    </td>
-                  </tr>
-                );
-              })}
-            </Table>
-          )}
-        </div>
+      {loading ? (
+        <Loading />
+      ) : filtered.length === 0 ? (
+        <EmptyState
+          icon="contract"
+          title="No contracts yet"
+          description={
+            status || clientId || vendorId || expiringOnly
+              ? "No contracts match your filters. Try adjusting them."
+              : "Contracts will appear here once candidates are placed through your pipeline."
+          }
+        />
+      ) : (
+        <Table
+          headers={[
+            "Candidate",
+            "Client",
+            "Vendor",
+            "Type",
+            "Rate",
+            "Start",
+            "End",
+            "Status",
+            "Doc",
+            "Flags",
+          ]}
+          footer={
+            <span>
+              Showing {filtered.length} contract{filtered.length === 1 ? "" : "s"}
+            </span>
+          }
+        >
+          {filtered.map((c) => {
+            const d = daysUntil(c.endDate);
+            return (
+              <tr
+                key={c.id}
+                onClick={() => setSelected(c)}
+                style={{ cursor: selected?.id === c.id ? "default" : undefined }}
+              >
+                <td className="font-medium text-ink-900">{c.candidateName ?? "—"}</td>
+                <td>{c.clientName ?? "—"}</td>
+                <td>{c.vendorName ?? "—"}</td>
+                <td>{c.contractType ?? "—"}</td>
+                <td className="whitespace-nowrap text-right">{formatInr(c.rate)}</td>
+                <td className="whitespace-nowrap">
+                  {c.startDate ? new Date(c.startDate).toLocaleDateString() : "—"}
+                </td>
+                <td className="whitespace-nowrap">
+                  {c.endDate ? new Date(c.endDate).toLocaleDateString() : "—"}
+                </td>
+                <td>
+                  <StatusPill status={c.status} />
+                </td>
+                <td>{c.documentUrl ? "📄" : "—"}</td>
+                <td className="whitespace-nowrap">
+                  {isExpiring(c) && <Badge tone="red">Ends in {d}d</Badge>}
+                </td>
+              </tr>
+            );
+          })}
+        </Table>
+      )}
 
-        {selected && (
-          <ContractPanel
-            contract={selected}
-            onClose={() => setSelected(null)}
-            onChanged={() => {
-              setSelected(null);
-              load();
-            }}
-          />
-        )}
-      </div>
+      {selected && (
+        <ContractPanel
+          contract={selected}
+          onClose={() => setSelected(null)}
+          onChanged={() => {
+            setSelected(null);
+            load();
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -356,7 +367,7 @@ function ContractPanel({
   }
 
   return (
-    <div className="panel" style={{ alignSelf: "start" }}>
+    <div className="panel" style={{ marginTop: "1rem" }}>
       <div className="mb-3 flex items-center justify-between">
         <h3 className="m-0 font-heading text-[13px] font-semibold">Contract Details</h3>
         <Button onClick={onClose}>Close</Button>

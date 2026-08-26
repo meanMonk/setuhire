@@ -1,4 +1,12 @@
 import { useState, type FormEvent } from "react";
+
+const DEMO_ACCOUNTS = [
+  { role: "CEO", email: "ceo@setuhire.com" },
+  { role: "Recruiter", email: "priya.recruiter@setuhire.com" },
+  { role: "Admin", email: "admin@setuhire.com" },
+];
+
+const DEMO_PASSWORD = "Passw0rd!";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { Button } from "../components/ui";
@@ -25,6 +33,12 @@ export default function Login() {
     } finally {
       setBusy(false);
     }
+  }
+
+  function fillDemo(demoEmail: string) {
+    setEmail(demoEmail);
+    setPassword(DEMO_PASSWORD);
+    setError("");
   }
 
   return (
@@ -59,6 +73,19 @@ export default function Login() {
           {busy ? "Signing in…" : "Sign in"}
         </Button>
       </form>
+      <div className="demo-accounts">
+        <p className="muted">Demo accounts (password: {DEMO_PASSWORD})</p>
+        {DEMO_ACCOUNTS.map((a) => (
+          <button
+            key={a.email}
+            type="button"
+            className="demo-account"
+            onClick={() => fillDemo(a.email)}
+          >
+            {a.role} — {a.email}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
