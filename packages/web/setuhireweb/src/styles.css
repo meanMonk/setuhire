@@ -141,6 +141,12 @@
   .sidebar-user .user-meta .role {
     @apply text-[11px] uppercase tracking-wide text-sidebar-text;
   }
+  .role-switch {
+    @apply mt-0.5 w-full cursor-pointer rounded border border-sidebar-border bg-transparent px-1 py-0.5 text-[11px] text-sidebar-text outline-none hover:text-white focus:border-primary-400;
+  }
+  .role-switch option {
+    @apply bg-slate-800 text-white;
+  }
 
   .sidebar-logout {
     @apply shrink-0 text-sidebar-text transition-colors hover:text-white;
@@ -343,6 +349,38 @@
   }
   .stage-arrow {
     @apply text-ink-400;
+  }
+
+  /* Job detail --------------------------------------------------------- */
+  .job-detail-grid {
+    @apply grid gap-4 lg:grid-cols-3;
+  }
+  .job-detail-grid > div:first-child {
+    @apply lg:col-span-2;
+  }
+  .detail-list {
+    @apply m-0 flex flex-col gap-2.5;
+  }
+  .detail-list > div {
+    @apply flex items-baseline justify-between gap-4;
+  }
+  .detail-list dt {
+    @apply shrink-0 text-[12px] font-medium uppercase tracking-wide text-ink-400;
+  }
+  .detail-list dd {
+    @apply m-0 text-right text-[13px] text-ink-900;
+  }
+  .vendor-list {
+    @apply m-0 flex list-none flex-col gap-2 p-0;
+  }
+  .vendor-item {
+    @apply rounded-md border border-surface-border px-3 py-2;
+  }
+  .stage-list {
+    @apply m-0 flex list-none flex-col gap-1.5 p-0;
+  }
+  .stage-list li {
+    @apply flex items-center justify-between text-[13px] capitalize text-ink-600;
   }
 
   /* Badges & status pills ------------------------------------------- */

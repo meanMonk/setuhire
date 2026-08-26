@@ -1,8 +1,8 @@
 # Project Proposal — Codename "SetuHire" (TBD)
 
-**Prepared for:** [Client Name]
-**Prepared by:** [Your Name]
-**Date:** [Date]
+**Prepared for:** Tia [Cloudscripts]
+**Prepared by:** Sahil Kashetwar [Vaayu Labs]
+**Date:** 25 Aug 2026
 
 *"SetuHire" is a working codename for this engagement — final product name to be decided.*
 
@@ -16,7 +16,21 @@ This proposal covers the scope, timeline, and cost for delivering a working v1, 
 
 ---
 
-## 2. Scope of Work
+## 2. Problems We're Solving
+
+| Today | With SetuHire |
+|---|---|
+| Recruiters manually screen hundreds of resumes per requirement | AI-assisted ranked matching surfaces a pre-filtered shortlist |
+| Resumes sit as unsearchable PDFs/Word files | Structured, searchable candidate profiles |
+| Match quality depends on which recruiter picks up the requirement | Consistent, ranked fit scores for every requirement |
+| Founders/managers chase recruiters for pipeline status | Live role-based dashboards — funnel visible without asking |
+| Margin per job is reconciled manually, after the fact | Billing vs cost vs margin visible per job, in real time |
+
+*Note: automated candidate-facing communication (auto emails/SMS on status change) is not in this scope — flagged separately if needed, see Section 6 (Exclusions).*
+
+---
+
+## 3. Scope of Work
 
 | Module | What it does |
 |---|---|
@@ -31,13 +45,13 @@ Anything beyond these six modules — new features, integrations, or workflow ch
 
 ---
 
-## 3. Delivery Timeline
+## 4. Delivery Timeline
 
 **6 weeks** from project kickoff (advance received) to UAT-ready v1.
 
 ---
 
-## 4. Investment & Milestone Breakdown
+## 5. Investment & Milestone Breakdown
 
 **Total project cost: ₹4,80,000**
 
@@ -54,7 +68,7 @@ Full source code and deployment access transfer at final payment — the system 
 
 ---
 
-## 5. Exclusions
+## 6. Exclusions
 
 The cost above covers development and delivery only. The following are **not included** and will be billed at actuals / arranged separately:
 
@@ -65,7 +79,7 @@ The cost above covers development and delivery only. The following are **not inc
 
 ---
 
-## 6. Week-Wise Delivery Breakdown
+## 7. Week-Wise Delivery Breakdown
 
 | Week | Focus | Key Deliverables |
 |---|---|---|
@@ -76,11 +90,11 @@ The cost above covers development and delivery only. The following are **not inc
 | Week 5 | Dashboards & Finance | Role-based dashboards (Admin/Sales/Manager), Finance & Reporting module |
 | Week 6 | Stabilization & Handover | Bug fixes, UAT support, source code handover, deployment docs |
 
-*Milestone payments (Section 4) are tied to functional checkpoints across these weeks, not calendar dates — actual pace may shift slightly week-to-week depending on review turnaround.*
+*Milestone payments (Section 5) are tied to functional checkpoints across these weeks, not calendar dates — actual pace may shift slightly week-to-week depending on review turnaround.*
 
 ---
 
-## 7. Why This Works for You
+## 8. Why This Works for You
 
 This isn't a from-scratch build — the platform architecture, data model, and matching approach are already engineered and proven in the demo you saw. That's what makes a 6-week, fixed-cost delivery realistic rather than optimistic.
 

@@ -7,7 +7,7 @@ import {
 } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { get, post } from "../api/client";
-import { canAccess } from "./rbac";
+import { canAccess, type Role } from "./rbac";
 
 export type User = {
   id: string;
@@ -21,13 +21,19 @@ type AuthContextValue = {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  demoRole: Role | null;
+  setDemoRole: (role: Role | null) => void;
 };
+
+const DEMO_ROLES: Role[] = ["ceo", "admin", "recruiter"];
+export { DEMO_ROLES };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [demoRole, setDemoRole] = useState<Role | null>(null);
 
   useEffect(() => {
     get<{ user: User }>("/auth/me")
@@ -38,6 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function login(email: string, password: string) {
     const r = await post<{ user: User }>("/auth/login", { email, password });
+    setDemoRole(null);
     setUser(r.user);
   }
 
@@ -45,12 +52,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await post("/auth/logout");
     } finally {
+      setDemoRole(null);
       setUser(null);
     }
   }
 
+  const effectiveUser =
+    user && demoRole && demoRole !== user.role ? { ...user, role: demoRole } : user;
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user: effectiveUser, loading, login, logout, demoRole, setDemoRole }}>
       {children}
     </AuthContext.Provider>
   );

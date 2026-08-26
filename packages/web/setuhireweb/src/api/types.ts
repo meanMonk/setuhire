@@ -36,6 +36,7 @@ export type VendorAssignment = {
   vendorName?: string;
   vendorStatus?: string;
   sourcingCost?: number | string | null;
+  assignedAt?: string | null;
 };
 
 export type Candidate = {

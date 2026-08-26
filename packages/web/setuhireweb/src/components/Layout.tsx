@@ -2,6 +2,7 @@ import { useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { canAccess } from "../auth/rbac";
+import type { Role } from "../auth/rbac";
 import { Avatar, Icon, type IconName } from "./ui";
 
 type NavItem = [label: string, to: string, icon: IconName];
@@ -38,7 +39,7 @@ function LogoMark() {
 }
 
 export default function Layout() {
-  const { user, logout } = useAuth();
+  const { user, logout, demoRole, setDemoRole } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
 
   return (
@@ -82,7 +83,16 @@ export default function Layout() {
           <Avatar name={user?.name} dark />
           <div className="user-meta">
             <div className="name">{user?.name}</div>
-            <div className="role">{user?.role}</div>
+            <select
+              className="role-switch"
+              value={demoRole ?? user?.role ?? ""}
+              onChange={(e) => setDemoRole(e.target.value as Role | null)}
+              title="Demo: switch role"
+            >
+              <option value="ceo">Demo: CEO</option>
+              <option value="admin">Demo: Admin</option>
+              <option value="recruiter">Demo: Recruiter</option>
+            </select>
           </div>
           <button className="sidebar-logout" onClick={() => void logout()} title="Logout">
             <Icon name="logout" />

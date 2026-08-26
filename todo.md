@@ -16,3 +16,12 @@
 ## Housekeeping
 
 - [ ] Remove or gate demo credentials panel on Login page before production (dev-only convenience)
+
+
+
+----
+
+CEO 
+Recruiters
+Account Manager
+Vendors invoices.
