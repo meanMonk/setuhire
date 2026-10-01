@@ -2,10 +2,21 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { createVendor, getVendorCandidates, listVendors } from "../../api/vendors";
 import type { Candidate, Vendor } from "../../api/types";
-import { Button, EmptyState, ErrorBox, Icon, Loading, StatusPill, Table, TechPills } from "../../components/ui";
+import {
+  Button,
+  EmptyState,
+  ErrorBox,
+  humanize,
+  Icon,
+  Loading,
+  StatusPill,
+  Table,
+  TechPills,
+} from "../../components/ui";
 
 export default function VendorsListPage() {
   const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [status, setStatus] = useState("");
   const [specialization, setSpecialization] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -19,7 +30,12 @@ export default function VendorsListPage() {
     setLoading(true);
     setError("");
     try {
-      setVendors(await listVendors({ specialization: specialization || undefined }));
+      setVendors(
+        await listVendors({
+          status: status || undefined,
+          specialization: specialization || undefined,
+        }),
+      );
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load vendors");
     } finally {
@@ -30,7 +46,7 @@ export default function VendorsListPage() {
   useEffect(() => {
     void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [specialization]);
+  }, [status, specialization]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -68,6 +84,17 @@ export default function VendorsListPage() {
       </div>
 
       <div className="filter-bar">
+        <select
+          className="h-9 rounded-md border border-surface-border bg-white px-3 text-[13px]"
+          style={{ width: "auto" }}
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+        >
+          <option value="">All statuses</option>
+          <option value="active">Active</option>
+          <option value="preferred">Preferred</option>
+          <option value="blacklisted">Blacklisted</option>
+        </select>
         <div className="filter-field">
           <Icon name="search" className="filter-icon" />
           <input
@@ -114,12 +141,12 @@ export default function VendorsListPage() {
           icon="vendors"
           title="No vendors yet"
           description={
-            specialization
-              ? "No vendors match your search. Try a different specialization."
+            status || specialization
+              ? "No vendors match your filters. Try adjusting them."
               : "Add your first vendor to start receiving candidate submissions."
           }
           action={
-            !specialization ? (
+            !status && !specialization ? (
               <Button variant="primary" onClick={() => setShowForm(true)}>
                 <Icon name="plus" /> Add Your First Vendor
               </Button>
@@ -191,7 +218,7 @@ function VendorRow({ vendor }: { vendor: Vendor }) {
                 {candidates.map((c) => (
                   <li key={c.id}>
                     <Link to={`/candidates/${c.id}`}>{c.name}</Link>
-                    {c.currentStatus && <span className="muted"> · {c.currentStatus}</span>}
+                    {c.currentStatus && <span className="muted"> · {humanize(c.currentStatus)}</span>}
                   </li>
                 ))}
               </ul>

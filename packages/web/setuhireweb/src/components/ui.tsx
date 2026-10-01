@@ -1,5 +1,14 @@
 import type { ReactNode } from "react";
 
+export function humanize(value?: string | null): string {
+  if (!value) return "—";
+  return value
+    .split(/[_\s]+/)
+    .filter(Boolean)
+    .map((w) => (w[0] ?? "").toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
 export function formatInr(value: number | string | null | undefined): string {
   if (value === null || value === undefined || value === "") return "—";
   const n = Number(value);
@@ -252,7 +261,7 @@ export function Button({
 
 export function StatusPill({ status }: { status?: string | null }) {
   const cls = TONE_CLASSES[statusTone(status)];
-  return <span className={`status-pill ${cls}`}>{status ?? "—"}</span>;
+  return <span className={`status-pill ${cls}`}>{humanize(status)}</span>;
 }
 
 export function ScoreBadge({ score }: { score?: number | null }) {

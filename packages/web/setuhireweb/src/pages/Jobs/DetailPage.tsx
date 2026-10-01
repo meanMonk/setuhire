@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { assignVendor, getJob, runMatch } from "../../api/jobs";
 import { createMatch, listMatches, updateMatch } from "../../api/candidates";
-import type { Job, Match } from "../../api/types";
+import { listVendors } from "../../api/vendors";
+import type { Job, Match, Vendor } from "../../api/types";
 import {
   Badge,
   Button,
@@ -21,9 +22,14 @@ export default function JobDetailPage() {
   const [matching, setMatching] = useState(false);
   const [error, setError] = useState("");
 
+  const [vendors, setVendors] = useState<Vendor[]>([]);
   const [vendorId, setVendorId] = useState("");
   const [sourcingCost, setSourcingCost] = useState("");
   const [assigning, setAssigning] = useState(false);
+
+  useEffect(() => {
+    listVendors().then(setVendors).catch(() => setVendors([]));
+  }, []);
 
   function loadJob() {
     if (!id) return;
@@ -251,19 +257,29 @@ export default function JobDetailPage() {
             )}
 
             <form onSubmit={onAssign} className="row" style={{ marginTop: "0.75rem" }}>
-              <input
-                placeholder="Vendor id"
+              <select
                 value={vendorId}
                 onChange={(e) => setVendorId(e.target.value)}
-                style={{ maxWidth: 160 }}
-              />
+                style={{ maxWidth: 220 }}
+                required
+              >
+                <option value="">Select vendor…</option>
+                {vendors
+                  .filter((v) => !assignments.some((a) => a.vendorId === v.id))
+                  .map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.name}
+                    </option>
+                  ))}
+              </select>
               <input
-                placeholder="Sourcing cost"
+                placeholder="Sourcing cost (₹)"
                 value={sourcingCost}
                 onChange={(e) => setSourcingCost(e.target.value)}
+                type="number"
                 style={{ maxWidth: 160 }}
               />
-              <Button type="submit" disabled={assigning}>
+              <Button type="submit" disabled={assigning || !vendorId}>
                 Assign
               </Button>
             </form>

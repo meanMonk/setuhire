@@ -1,6 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { get } from "../api/client";
+import { useAuth } from "../auth/AuthContext";
+import { canAccess } from "../auth/rbac";
 import type { ActivityLogItem, AttentionFeedItem, DashboardSummary } from "../api/types";
 import { EmptyState, ErrorBox, formatInr, Icon, Loading } from "../components/ui";
 
@@ -74,11 +76,24 @@ function relTime(at?: string | null): string {
 }
 
 export default function Dashboard() {
+  const { user } = useAuth();
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [feed, setFeed] = useState<AttentionFeedItem[]>([]);
   const [activity, setActivity] = useState<ActivityLogItem[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+
+  const visibleStats = useMemo(
+    () => STATS.filter((stat) => canAccess(user?.role, stat.to.split("?")[0] ?? stat.to)),
+    [user?.role],
+  );
+  const visibleFeed = useMemo(
+    () =>
+      feed.filter(
+        (item) => !item.link || canAccess(user?.role, item.link.split("?")[0] ?? item.link),
+      ),
+    [feed, user?.role],
+  );
 
   useEffect(() => {
     Promise.allSettled([
@@ -108,7 +123,7 @@ export default function Dashboard() {
       {error && <ErrorBox message={error} />}
 
       <div className="dash-grid mb-5">
-        {STATS.map((stat) => (
+        {visibleStats.map((stat) => (
           <Link key={stat.key} to={stat.to} className="stat-tile">
             <span className={`stat-icon tint-${stat.tint}`}>
               <Icon name={stat.icon} />
@@ -128,15 +143,15 @@ export default function Dashboard() {
       <div className="side-by-side">
         <section className="card">
           <h3 className="card-title">Needs Your Attention</h3>
-          {feed.length === 0 ? (
+          {visibleFeed.length === 0 ? (
             <EmptyState
               icon="inbox"
               title="All clear!"
               description="Nothing needs your attention right now."
             />
           ) : (
-            <ul className="feed">
-              {feed.map((item, i) => (
+            <ul className="feed max-h-[360px] overflow-y-auto">
+              {visibleFeed.map((item, i) => (
                 <li key={i} className="feed-item">
                   <span className={`feed-dot tint-${FEED_TONE[item.type ?? ""] ?? "neutral"}`} />
                   {item.link ? (
@@ -161,7 +176,7 @@ export default function Dashboard() {
               description="Activity will appear here as you manage jobs, candidates, and interviews."
             />
           ) : (
-            <ul className="feed">
+            <ul className="feed max-h-[360px] overflow-y-auto">
               {activity.map((item, i) => (
                 <li key={i} className="feed-item">
                   <div className="flex items-baseline justify-between gap-3">

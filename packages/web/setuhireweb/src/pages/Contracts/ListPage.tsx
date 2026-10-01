@@ -11,6 +11,7 @@ import {
   EmptyState,
   ErrorBox,
   formatInr,
+  humanize,
   Icon,
   Loading,
   StatusPill,
@@ -160,7 +161,7 @@ export default function ContractsListPage() {
           <option value="">All statuses</option>
           {CONTRACT_STATUSES.map((s) => (
             <option key={s} value={s}>
-              {s}
+              {humanize(s)}
             </option>
           ))}
         </select>
@@ -219,7 +220,7 @@ export default function ContractsListPage() {
               <select value={contractType} onChange={(e) => setContractType(e.target.value)}>
                 {CONTRACT_TYPES.map((t) => (
                   <option key={t} value={t}>
-                    {t}
+                    {humanize(t)}
                   </option>
                 ))}
               </select>
@@ -306,7 +307,7 @@ export default function ContractsListPage() {
                 <td className="font-medium text-ink-900">{c.candidateName ?? "—"}</td>
                 <td>{c.clientName ?? "—"}</td>
                 <td>{c.vendorName ?? "—"}</td>
-                <td>{c.contractType ?? "—"}</td>
+                <td>{humanize(c.contractType)}</td>
                 <td className="whitespace-nowrap text-right">{formatInr(c.rate)}</td>
                 <td className="whitespace-nowrap">
                   {c.startDate ? new Date(c.startDate).toLocaleDateString() : "—"}
@@ -317,7 +318,22 @@ export default function ContractsListPage() {
                 <td>
                   <StatusPill status={c.status} />
                 </td>
-                <td>{c.documentUrl ? "📄" : "—"}</td>
+                <td>
+                  {c.documentUrl ? (
+                    <a
+                      href={c.documentUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      title="Open document"
+                      className="inline-flex text-ink-400 hover:text-primary-600"
+                    >
+                      <Icon name="contract" />
+                    </a>
+                  ) : (
+                    <span className="muted">—</span>
+                  )}
+                </td>
                 <td className="whitespace-nowrap">
                   {isExpiring(c) && <Badge tone="red">Ends in {d}d</Badge>}
                 </td>
@@ -376,7 +392,7 @@ function ContractPanel({
       <div className="muted text-[13px]">
         <div>Client: {contract.clientName ?? "—"}</div>
         <div>Vendor: {contract.vendorName ?? "—"}</div>
-        <div>Type: {contract.contractType ?? "—"}</div>
+        <div>Type: {humanize(contract.contractType)}</div>
         <div>Rate: {formatInr(contract.rate)}</div>
         <div>
           Term:{" "}
@@ -408,7 +424,7 @@ function ContractPanel({
           >
             {CONTRACT_STATUSES.map((s) => (
               <option key={s} value={s}>
-                {s}
+                {humanize(s)}
               </option>
             ))}
           </select>

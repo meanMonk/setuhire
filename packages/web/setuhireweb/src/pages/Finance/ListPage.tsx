@@ -11,7 +11,16 @@ import { listClients } from "../../api/clients";
 import { listVendors } from "../../api/vendors";
 import { listMatches } from "../../api/candidates";
 import type { Client, FinanceRecord, Match, Vendor } from "../../api/types";
-import { Button, EmptyState, ErrorBox, formatInr, Loading, StatusPill, Table } from "../../components/ui";
+import {
+  Button,
+  EmptyState,
+  ErrorBox,
+  formatInr,
+  humanize,
+  Loading,
+  StatusPill,
+  Table,
+} from "../../components/ui";
 
 const BILLING_STATUSES = ["pending", "invoiced", "payment_received"];
 
@@ -228,7 +237,7 @@ export default function FinanceListPage() {
           <option value="">All billing statuses</option>
           {BILLING_STATUSES.map((s) => (
             <option key={s} value={s}>
-              {s}
+              {humanize(s)}
             </option>
           ))}
         </select>
@@ -283,7 +292,7 @@ export default function FinanceListPage() {
               <select value={status} onChange={(e) => setStatus(e.target.value)}>
                 {BILLING_STATUSES.map((s) => (
                   <option key={s} value={s}>
-                    {s}
+                    {humanize(s)}
                   </option>
                 ))}
               </select>
@@ -350,7 +359,7 @@ export default function FinanceListPage() {
                 >
                   {BILLING_STATUSES.map((s) => (
                     <option key={s} value={s}>
-                      {s}
+                      {humanize(s)}
                     </option>
                   ))}
                 </select>

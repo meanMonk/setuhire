@@ -293,6 +293,9 @@
   .grid.cols-6 {
     @apply grid-cols-6;
   }
+  .grid.cols-7 {
+    @apply grid-cols-7;
+  }
 
   .stat-card {
     @apply rounded-card border border-surface-border bg-surface-card p-4 shadow-card transition-colors hover:border-primary-400;
