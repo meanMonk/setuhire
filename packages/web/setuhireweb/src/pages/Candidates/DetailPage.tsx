@@ -95,30 +95,32 @@ export default function CandidateDetailPage() {
         {matches.length === 0 ? (
           <div className="muted">No match history.</div>
         ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>Job</th>
-                <th>Score</th>
-                <th>Stage</th>
-              </tr>
-            </thead>
-            <tbody>
-              {matches.map((m) => (
-                <tr key={m.id}>
-                  <td>
-                    {m.jobId ? <Link to={`/jobs/${m.jobId}`}>{m.jobTitle ?? m.jobId}</Link> : "—"}
-                  </td>
-                  <td>
-                    <ScoreBadge score={m.score ?? m.matchScore} />
-                  </td>
-                  <td>
-                    <StatusPill status={m.stage} />
-                  </td>
+          <div className="overflow-x-auto">
+            <table>
+              <thead>
+                <tr>
+                  <th>Job</th>
+                  <th>Score</th>
+                  <th>Stage</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {matches.map((m) => (
+                  <tr key={m.id}>
+                    <td>
+                      {m.jobId ? <Link to={`/jobs/${m.jobId}`}>{m.jobTitle ?? m.jobId}</Link> : "—"}
+                    </td>
+                    <td>
+                      <ScoreBadge score={m.score ?? m.matchScore} />
+                    </td>
+                    <td>
+                      <StatusPill status={m.stage} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </Card>
     </div>

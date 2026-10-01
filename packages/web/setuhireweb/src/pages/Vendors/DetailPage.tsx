@@ -49,7 +49,7 @@ export default function VendorDetailPage() {
       </Card>
 
       <Card title="Performance">
-        <div className="grid cols-4">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <div className="stat-card">
             <div className="value">{perf?.submissions ?? 0}</div>
             <div className="label">Submissions</div>
@@ -79,28 +79,30 @@ export default function VendorDetailPage() {
         {resources.length === 0 ? (
           <div className="muted">No resources supplied yet.</div>
         ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>Candidate</th>
-                <th>Job</th>
-                <th>Stage</th>
-              </tr>
-            </thead>
-            <tbody>
-              {resources.map((r) => (
-                <tr key={r.matchId ?? r.candidateId}>
-                  <td>
-                    <Link to={`/candidates/${r.candidateId}`}>{r.candidateName}</Link>
-                  </td>
-                  <td>{r.jobTitle ?? "—"}</td>
-                  <td>
-                    <StatusPill status={r.stage} />
-                  </td>
+          <div className="overflow-x-auto">
+            <table>
+              <thead>
+                <tr>
+                  <th>Candidate</th>
+                  <th>Job</th>
+                  <th>Stage</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {resources.map((r) => (
+                  <tr key={r.matchId ?? r.candidateId}>
+                    <td>
+                      <Link to={`/candidates/${r.candidateId}`}>{r.candidateName}</Link>
+                    </td>
+                    <td>{r.jobTitle ?? "—"}</td>
+                    <td>
+                      <StatusPill status={r.stage} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </Card>
     </div>

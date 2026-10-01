@@ -68,30 +68,32 @@ export default function ClientDetailPage() {
         {jobs.length === 0 ? (
           <div className="muted">No jobs.</div>
         ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>Title</th>
-                <th>Status</th>
-                <th>Type</th>
-                <th>TSC</th>
-              </tr>
-            </thead>
-            <tbody>
-              {jobs.map((j) => (
-                <tr key={j.id}>
-                  <td>
-                    <Link to={`/jobs/${j.id}`}>{j.title}</Link>
-                  </td>
-                  <td>
-                    <StatusPill status={j.status} />
-                  </td>
-                  <td>{j.employmentType?.toUpperCase() ?? "—"}</td>
-                  <td>{formatInr(j.targetSellingCost)}</td>
+          <div className="overflow-x-auto">
+            <table>
+              <thead>
+                <tr>
+                  <th>Title</th>
+                  <th>Status</th>
+                  <th>Type</th>
+                  <th>TSC</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {jobs.map((j) => (
+                  <tr key={j.id}>
+                    <td>
+                      <Link to={`/jobs/${j.id}`}>{j.title}</Link>
+                    </td>
+                    <td>
+                      <StatusPill status={j.status} />
+                    </td>
+                    <td>{j.employmentType?.toUpperCase() ?? "—"}</td>
+                    <td>{formatInr(j.targetSellingCost)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </Card>
 
