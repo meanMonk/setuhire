@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { addClientNote, getClient, type ClientDetail } from "../../api/clients";
-import { formatInr, Button, Card, ErrorBox, Loading, StatusPill } from "../../components/ui";
+import { Button, Card, ErrorBox, formatInr, Loading, StatusPill } from "../../components/ui";
 
 export default function ClientDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -97,7 +97,7 @@ export default function ClientDetailPage() {
         )}
       </Card>
 
-      <div className="side-by-side">
+      <div className="side-by-side mt-2">
         <Card title="Resources Hired">
           {resources.length === 0 ? (
             <div className="muted">None placed yet.</div>

@@ -219,7 +219,7 @@ export function Card({
   actions?: ReactNode;
 }) {
   return (
-    <div className="card">
+    <div className="card mt-2">
       {title && (
         <div className="mb-3 flex items-center justify-between">
           <h3 className="m-0 font-heading text-[13px] font-semibold text-ink-900">{title}</h3>
