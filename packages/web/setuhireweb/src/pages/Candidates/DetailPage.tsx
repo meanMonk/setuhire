@@ -1,7 +1,16 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getCandidate, type CandidateDetail } from "../../api/candidates";
-import { Card, ErrorBox, formatInr, Loading, StatusPill, Tags } from "../../components/ui";
+import {
+  Card,
+  ErrorBox,
+  formatInr,
+  Icon,
+  Loading,
+  ScoreBadge,
+  StatusPill,
+  Tags,
+} from "../../components/ui";
 
 export default function CandidateDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -37,8 +46,9 @@ export default function CandidateDetailPage() {
       </p>
 
       {candidate.resumeUrl && (
-        <p>
-          Resume: <span className="muted">{candidate.resumeUrl}</span> (on file)
+        <p className="flex items-center gap-1.5 text-[13px] text-ink-600">
+          <Icon name="contract" className="text-ink-400" />
+          Resume on file
         </p>
       )}
 
@@ -99,7 +109,9 @@ export default function CandidateDetailPage() {
                   <td>
                     {m.jobId ? <Link to={`/jobs/${m.jobId}`}>{m.jobTitle ?? m.jobId}</Link> : "—"}
                   </td>
-                  <td>{m.score ?? m.matchScore ?? "—"}</td>
+                  <td>
+                    <ScoreBadge score={m.score ?? m.matchScore} />
+                  </td>
                   <td>
                     <StatusPill status={m.stage} />
                   </td>

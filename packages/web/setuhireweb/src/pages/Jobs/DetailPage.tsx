@@ -10,6 +10,7 @@ import {
   ErrorBox,
   formatInr,
   Loading,
+  ScoreBadge,
   StatusPill,
   Tags,
 } from "../../components/ui";
@@ -146,49 +147,52 @@ export default function JobDetailPage() {
                 No AI matches run yet. Click “Run AI Match” to rank candidates against this job.
               </div>
             ) : (
-              <table>
-                <thead>
-                  <tr>
-                    <th>Candidate</th>
-                    <th>Score</th>
-                    <th>Source</th>
-                    <th>Skill Overlap</th>
-                    <th>Rate vs TSC</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {matches.map((m) => {
-                    const score = m.score ?? m.matchScore ?? 0;
-                    return (
-                      <tr key={m.id ?? m.candidate?.id}>
-                        <td>{m.candidate?.name ?? m.candidateName}</td>
-                        <td>
-                          {score >= 90 && <Badge tone="green">≥90%</Badge>}
-                          {score}%
-                        </td>
-                        <td>{m.source ?? "direct"}</td>
-                        <td>
-                          <Tags items={m.keySkillsOverlap} />
-                        </td>
-                        <td>
-                          {m.rateFit === "above_tsc" ? (
-                            <Badge tone="red">Above TSC</Badge>
-                          ) : (
-                            <Badge tone="green">OK</Badge>
-                          )}
-                        </td>
-                        <td>
-                          <div className="row">
-                            <Button onClick={() => moveToPipeline(m)}>Move to Pipeline</Button>
-                            <Button onClick={() => reject(m)}>Reject</Button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+              <div className="overflow-x-auto">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Candidate</th>
+                      <th>Score</th>
+                      <th>Source</th>
+                      <th>Skill Overlap</th>
+                      <th>Rate vs TSC</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {matches.map((m) => {
+                      const score = m.score ?? m.matchScore ?? 0;
+                      return (
+                        <tr key={m.id ?? m.candidate?.id}>
+                          <td className="font-medium text-ink-900">
+                            {m.candidate?.name ?? m.candidateName}
+                          </td>
+                          <td>
+                            <ScoreBadge score={score} />
+                          </td>
+                          <td className="capitalize">{m.source ?? "direct"}</td>
+                          <td>
+                            <Tags items={m.keySkillsOverlap} />
+                          </td>
+                          <td>
+                            {m.rateFit === "above_tsc" ? (
+                              <Badge tone="red">Above TSC</Badge>
+                            ) : (
+                              <Badge tone="green">OK</Badge>
+                            )}
+                          </td>
+                          <td className="whitespace-nowrap">
+                            <div className="flex flex-nowrap items-center gap-2">
+                              <Button onClick={() => moveToPipeline(m)}>Move to Pipeline</Button>
+                              <Button onClick={() => reject(m)}>Reject</Button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             )}
           </section>
         </div>
